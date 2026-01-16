@@ -1,0 +1,531 @@
+:root {
+    --google-blue: #4285F4;
+    --google-red: #EA4335;
+    --google-yellow: #FBBC05;
+    --google-green: #34A853;
+    --primary-color: #4285F4;
+
+    --background-color: #f8f9fa;
+    --surface-color: #ffffff;
+    --text-color: #202124;
+    --text-secondary: #202124;
+    --border-color: #dadce0;
+    --hover-color: #f1f3f4;
+}
+
+* {
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+    background: var(--primary-color);
+    color: #000;
+}
+
+html, body {
+    font-size: 16px;
+}
+
+/* Increase key text sizes for readability */
+.domain-label {
+    font-size: 15px;
+}
+
+.keyword-label.icon-label {
+    font-size: 16px;
+}
+
+.delete-button,
+.icon-trash {
+    font-size: 16px;
+}
+
+/* Ensure buttons and inputs inherit readable sizing */
+button,
+input,
+select,
+textarea {
+    font-size: 16px;
+}
+
+body {
+    font-family:
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        Oxygen,
+        Ubuntu,
+        Cantarell,
+        "Open Sans",
+        "Helvetica Neue",
+        sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    line-height: 1.6;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Header */
+.page-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.page-header .app-icon {
+    width: 48px;
+    height: 48px;
+    display: block;
+    align-self: center;
+}
+
+.page-header-text {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.page-header-text h1 {
+    margin: 0;
+    line-height: 1.2;
+}
+
+.page-header-text .subtitle {
+    margin: 0;
+}
+
+.page-header h1 {
+    font-size: 30px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--primary-color);
+}
+
+.page-header .subtitle {
+    font-size: 17px;
+    color: var(--text-secondary);
+}
+
+/* Main Content */
+.main-content {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.section {
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 24px;
+}
+
+.section h2 {
+    font-size: 21px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    color: var(--text-color);
+}
+
+/* Form */
+.add-keyword-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.form-group label {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.form-group input {
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--background-color);
+    color: var(--text-color);
+    font-size: 15px;
+    transition: border-color 0.2s;
+    margin-bottom: 0;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(101, 131, 252, 0.1);
+}
+
+.form-group input.error {
+    border-color: var(--error-color);
+}
+
+.form-group small {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+.error-message {
+    background: rgba(255, 68, 68, 0.1);
+    border: 1px solid var(--error-color);
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 14px;
+    color: var(--error-color);
+    margin-bottom: 16px;
+}
+
+.submit-button {
+    padding: 12px 24px;
+    background: var(--primary-color);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    align-self: flex-start;
+}
+
+.submit-button:hover {
+    background: #5573fc;
+}
+
+.submit-button:active {
+    background: #4553fc;
+}
+
+.submit-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: #a0a7c2;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Keywords List */
+.keywords-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.empty-message {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 15px;
+    padding: 40px 20px;
+}
+
+.order-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    margin-right: 10px;
+    border-radius: 6px;
+    background: var(--background-color);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.keyword-item {
+    display: flex;
+    align-items: center;
+}
+
+.keyword-item.dragging {
+    opacity: 0.7;
+}
+
+/* Grid container like Chrome settings cards */
+#keywords-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 16px;
+    align-items: stretch;
+}
+
+/* Tile card */
+.keyword-item {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 12px;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    transition: box-shadow 0.2s, border-color 0.2s, transform 0.2s;
+    cursor: grab;
+}
+
+.keyword-item:hover {
+    box-shadow: 0 4px 12px rgba(66, 133, 244, 0.15);
+    border-color: var(--google-blue);
+    transform: translateY(-1px);
+}
+
+.keyword-item.dragging {
+    opacity: 0.85;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.16);
+}
+
+/* Icon */
+.keyword-icon.icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+}
+
+.keyword-item:hover .keyword-icon.icon {
+    box-shadow: 0 8px 14px rgba(0, 0, 0, 0.12);
+}
+
+.keyword-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.icon-letter {
+    font-size: 23px;
+    font-weight: 600;
+    color: var(--google-blue);
+}
+
+/* Labels */
+.keyword-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.keyword-label.icon-label {
+    font-size: 13px;
+    color: var(--text-color);
+    text-align: center;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Hide verbose details in tile view */
+.description-label,
+.url-label {
+    display: none;
+}
+
+/* Order badge positioned top-left */
+.order-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    background: var(--hover-color);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1;
+}
+
+/* Actions row hidden in compact tile; shows on hover */
+.keyword-actions {
+    margin-top: 4px;
+    display: none;
+}
+
+.keyword-item:hover .keyword-actions {
+    display: flex;
+    gap: 6px;
+}
+
+/* Delete button minimal */
+.delete-button {
+    padding: 6px 10px;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s, background-color 0.2s;
+}
+
+.delete-button:hover {
+    color: var(--google-red);
+    border-color: var(--google-red);
+    background: rgba(234, 67, 53, 0.06);
+}
+
+/* Footer */
+.page-footer {
+    margin-top: 40px;
+    padding-top: 30px;
+    border-top: 2px solid var(--border-color);
+}
+
+.instructions {
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 24px;
+}
+
+.instructions h3 {
+    font-size: 19px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--text-color);
+}
+
+.instructions ol {
+    margin-left: 20px;
+    margin-bottom: 16px;
+    color: var(--text-secondary);
+}
+
+.instructions li {
+    margin-bottom: 8px;
+}
+
+.instructions code {
+    background: var(--background-color);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: "Courier New", monospace;
+    font-size: 14px;
+    color: var(--primary-color);
+}
+
+.instructions kbd {
+    background: var(--background-color);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: "Courier New", monospace;
+    font-size: 13px;
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+}
+
+.tip {
+    background: rgba(101, 131, 252, 0.1);
+    border: 1px solid var(--primary-color);
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 16px;
+    font-size: 15px;
+    color: var(--text-color);
+}
+
+.tip strong {
+    color: var(--primary-color);
+}
+
+.icon-row {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+/* Absolute delete button so it doesn't move the icon */
+.icon-trash {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    opacity: 0;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    transition: opacity 0.2s, background-color 0.2s, color 0.2s;
+}
+
+.keyword-item:hover .icon-trash {
+    opacity: 1;
+}
+
+.icon-trash:hover {
+    background: rgba(234, 67, 53, 0.08);
+    color: var(--google-red);
+}
+
+.input-inline {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+
+.input-inline #url-input {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+}
+
+.parse-button {
+    padding: 8px 12px;
+    background: var(--primary-color);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    cursor: pointer;
+    flex: 0 0 auto;
+}
+
+.parse-button:hover {
+    background: #3a76eb;
+}
+

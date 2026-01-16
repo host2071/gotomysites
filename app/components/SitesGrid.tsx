@@ -1,0 +1,69 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { getKeywords, subscribeToDataChanges, getKeywordsSync } from "../lib/storage/index";
+import type { KeywordMapping } from "../types";
+import SiteItem from "./SiteItem";
+
+interface SitesGridProps {
+    onSiteClick?: (url: string) => void;
+}
+
+export default function SitesGrid({ onSiteClick }: SitesGridProps) {
+    const [sites, setSites] = useState<KeywordMapping[]>([]);
+
+    useEffect(() => {
+        // Сначала загружаем сайты из localStorage для быстрой загрузки
+        const keywords = getKeywordsSync();
+        setSites(keywords);
+
+        // Затем синхронизируем с Firebase в фоне (не блокируем загрузку)
+        const loadSitesAsync = async () => {
+            try {
+                const keywordsAsync = await getKeywords();
+                // Обновляем только если данные изменились
+                if (keywordsAsync.length !== keywords.length) {
+                    setSites(keywordsAsync);
+                }
+            } catch (err) {
+                console.error("Error loading sites:", err);
+            }
+        };
+
+        loadSitesAsync();
+
+        // Подписываемся на изменения
+        const unsubscribe = subscribeToDataChanges((data) => {
+            if (data) {
+                setSites(data.keywords || []);
+            }
+        });
+
+        return () => {
+            if (unsubscribe) {
+                unsubscribe();
+            }
+        };
+    }, []);
+
+    if (sites.length === 0) {
+        return (
+            <div className="sites-grid-empty">
+                <p>Нет сохраненных сайтов</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="sites-grid">
+            {sites.map((site) => (
+                <SiteItem
+                    key={site.keyword}
+                    site={site}
+                    onClick={onSiteClick}
+                />
+            ))}
+        </div>
+    );
+}
+
