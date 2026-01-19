@@ -11,17 +11,6 @@ A web application for quick access to your favorite websites using keywords. Typ
 2. Type a keyword followed by a search query (e.g., `youtube react tutorial`) to search on that site
 3. Click on any site icon in the grid on the home page for instant access
 
-**Search Suggestions:**
-- When you focus on the empty search bar, popular sites are displayed
-- As you type, suggestions appear automatically based on your saved keywords
-- Use arrow keys to navigate suggestions, Enter to select, or click with your mouse
-- Selected suggestions are added to the search bar with a space after them
-
-**Keyboard Shortcuts:**
-- `Arrow Up/Down` - Navigate through suggestions
-- `Enter` - Select a suggestion or perform search
-- `Escape` - Close suggestions
-
 **Managing Your Sites:**
 1. Click the settings icon (⚙️) in the top right corner
 2. In the settings page, you can:
@@ -59,15 +48,6 @@ The application parses your input to separate the keyword from the search query.
 - First, the app looks for an exact keyword match
 - If no exact match is found and your keyword is longer than 3 characters, it performs fuzzy matching by checking if keywords start with your input, contain it, or match in descriptions
 - If no match is found, it uses the default search engine
-
-**Suggestions:**
-- When the search bar is empty and focused, popular sites are shown (for authenticated users) or all your saved keywords (for non-authenticated users)
-- When typing, suggestions are filtered to show matching keywords
-- Suggestions help you quickly find and select keywords without typing them completely
-
-**Data Storage:**
-- Without authentication: Your data is stored locally in your browser
-- With authentication: Your data is synced to the cloud and accessible from any device
 
 ### Tips for Best Experience
 
