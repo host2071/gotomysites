@@ -12,8 +12,10 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME;
+
 export const metadata: Metadata = {
-  title: "Go Website Launcher",
+  title: APP_NAME,
   description: "Быстрый доступ к вашим любимым сайтам",
 };
 

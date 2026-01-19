@@ -24,6 +24,16 @@ const DEFAULT_KEYWORDS: KeywordMapping[] = [
 ];
 
 /**
+ * Default storage data
+ */
+const DEFAULT_DATA: StorageData = {
+    keywords: DEFAULT_KEYWORDS,
+    settings: {
+        defaultSearchEngine: "https://google.com/search?q=",
+    },
+};
+
+/**
  * Initialize storage with default values
  */
 function initializeStorage(): void {
@@ -32,13 +42,7 @@ function initializeStorage(): void {
     const stored = localStorage.getItem(STORAGE_KEY);
     
     if (!stored) {
-        const defaultData: StorageData = {
-            keywords: DEFAULT_KEYWORDS,
-            settings: {
-                defaultSearchEngine: "https://google.com/search?q=",
-            },
-        };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultData));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_DATA));
     }
 }
 
@@ -47,35 +51,20 @@ function initializeStorage(): void {
  */
 export function loadData(): StorageData {
     if (typeof window === "undefined") {
-        return {
-            keywords: DEFAULT_KEYWORDS,
-            settings: {
-                defaultSearchEngine: "https://google.com/search?q=",
-            },
-        };
+        return DEFAULT_DATA;
     }
     
     initializeStorage();
     const stored = localStorage.getItem(STORAGE_KEY);
     
     if (!stored) {
-        return {
-            keywords: DEFAULT_KEYWORDS,
-            settings: {
-                defaultSearchEngine: "https://google.com/search?q=",
-            },
-        };
+        return DEFAULT_DATA;
     }
     
     try {
         return JSON.parse(stored) as StorageData;
     } catch {
-        return {
-            keywords: DEFAULT_KEYWORDS,
-            settings: {
-                defaultSearchEngine: "https://google.com/search?q=",
-            },
-        };
+        return DEFAULT_DATA;
     }
 }
 
@@ -162,5 +151,23 @@ export function saveOrder(order: string[]): void {
     if (typeof window === "undefined") return;
     
     localStorage.setItem(ORDER_KEY, JSON.stringify(order));
+}
+
+/**
+ * Reset localStorage to default settings
+ * Clears all data and initializes with default values
+ */
+export function resetLocalStorage(): void {
+    if (typeof window === "undefined") return;
+    
+    // Удаляем все данные пользователя
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(ORDER_KEY);
+    
+    // Устанавливаем начальные настройки
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_DATA));
+    
+    // Отправляем событие для обновления UI в других вкладках
+    window.dispatchEvent(new CustomEvent("localStorage-update"));
 }
 

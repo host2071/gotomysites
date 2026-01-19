@@ -156,6 +156,37 @@ export const getPopularSites = async (limitCount: number = 10): Promise<Site[]> 
 };
 
 /**
+ * Получить популярные сайты пользователя (отфильтрованные по доступным keywords)
+ * @param userKeywords - список keywords, доступных пользователю
+ * @param limitCount - максимальное количество сайтов
+ */
+export const getPopularUserSites = async (
+  userKeywords: string[],
+  limitCount: number = 10
+): Promise<Site[]> => {
+  if (!db || userKeywords.length === 0) {
+    return [];
+  }
+
+  try {
+    // Получаем все популярные сайты
+    const popularSites = await getPopularSites(limitCount * 2); // Берем больше, чтобы после фильтрации осталось достаточно
+    
+    // Фильтруем только те, что есть у пользователя (case-insensitive)
+    const userKeywordsLower = userKeywords.map(k => k.toLowerCase());
+    const filteredSites = popularSites.filter(site => 
+      userKeywordsLower.includes(site.keyword.toLowerCase())
+    );
+    
+    // Возвращаем отсортированные по usageCount (они уже отсортированы)
+    return filteredSites.slice(0, limitCount);
+  } catch (error) {
+    console.error("Error getting popular user sites:", error);
+    return [];
+  }
+};
+
+/**
  * Удалить сайт (уменьшить счетчик использования)
  */
 export const removeSiteUsage = async (siteId: string): Promise<void> => {

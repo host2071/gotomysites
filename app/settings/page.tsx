@@ -2,13 +2,16 @@
 
 import { useState, useEffect, FormEvent } from "react";
 import { getKeywords, addKeyword, removeKeyword, subscribeToDataChanges } from "../lib/storage/index";
-import { getCurrentUser } from "../lib/firebase/auth";
+import { getCurrentUser, logout } from "../lib/firebase/auth";
 import { isValidUrl, normalizeUrl, getFaviconUrl } from "../lib/utils";
+import { resetLocalStorage } from "../lib/storage/local";
 import type { KeywordMapping } from "../types";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { getSiteByKeyword } from "../lib/firebase/sites";
 
 export default function SettingsPage() {
+    const router = useRouter();
     const [keywords, setKeywords] = useState<KeywordMapping[]>([]);
     const [keyword, setKeyword] = useState("");
     const [url, setUrl] = useState("");
@@ -18,9 +21,15 @@ export default function SettingsPage() {
     const [showAdvancedFields, setShowAdvancedFields] = useState(false);
     const [error, setError] = useState("");
     const [isAdding, setIsAdding] = useState(false);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
 
     useEffect(() => {
         loadKeywords();
+        
+        // Проверяем авторизацию
+        getCurrentUser().then((user) => {
+            setIsAuthenticated(!!user);
+        });
         
         // Подписываемся на изменения в Firebase
         const unsubscribe = subscribeToDataChanges((data) => {
@@ -219,22 +228,34 @@ export default function SettingsPage() {
         }
     };
 
+    const handleLogout = async () => {
+        try {
+            await logout();
+            // Сбрасываем localStorage к начальным настройкам
+            resetLocalStorage();
+            router.push("/");
+        } catch (err) {
+            setError("Ошибка при выходе из аккаунта");
+            console.error("Error logging out:", err);
+        }
+    };
+
     return (
-        <div className="settings-container">
-            <header className="settings-header">
-                <Link href="/" className="back-link">
+        <div className="min-h-screen px-5 py-20 max-w-[800px] mx-auto">
+            <header className="flex items-center gap-4 mb-8">
+                <Link href="/" className="text-[var(--google-blue)] no-underline text-sm transition-opacity hover:opacity-80">
                     ← Назад
                 </Link>
-                <h1>Настройки</h1>
+                <h1 className="text-[32px] font-normal m-0 text-[var(--text)]">Настройки</h1>
             </header>
 
-            <div className="settings-content">
-                <section className="settings-section">
-                    <h2>Добавить сайт</h2>
-                    <form onSubmit={handleSubmit} className="settings-form">
-                        <div className="form-group">
-                            <label htmlFor="url">URL:</label>
-                            <div className="input-with-button">
+            <div className="flex flex-col gap-8">
+                <section className="bg-[var(--bg)] border border-[var(--border)] rounded-lg p-6">
+                    <h2 className="text-xl font-normal m-0 mb-5 text-[var(--text)]">Добавить сайт</h2>
+                    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+                        <div className="flex flex-col gap-2">
+                            <label htmlFor="url" className="text-sm font-medium text-[var(--text)]">URL:</label>
+                            <div className="flex gap-2 items-start">
                                 <input
                                     id="url"
                                     type="text"
@@ -248,24 +269,25 @@ export default function SettingsPage() {
                                     }}
                                     placeholder="https://youtube.com/search?q=query"
                                     required
+                                    className="flex-1 px-4 py-3 border border-[var(--border)] rounded text-sm bg-[var(--bg)] text-[var(--text)] font-inherit transition-colors focus:outline-none focus:border-[var(--google-blue)]"
                                 />
                                 <button
                                     type="button"
                                     onClick={handleParse}
-                                    className="parse-button"
+                                    className="px-5 py-3 bg-[var(--google-blue)] text-white border-none rounded text-sm font-medium cursor-pointer transition-colors hover:bg-[#3367d6] whitespace-nowrap"
                                     title="Парсить URL и автоматически заполнить поля"
                                 >
                                     Parse
                                 </button>
                             </div>
-                            <small className="form-hint">
+                            <small className="text-xs text-[var(--text-secondary)] mt-1">
                                 💡 Совет: нажмите Parse для автоматического заполнения полей из URL
                             </small>
                         </div>
                         {showAdvancedFields && (
                             <>
-                                <div className="form-group">
-                                    <label htmlFor="keyword">Ключевое слово:</label>
+                                <div className="flex flex-col gap-2">
+                                    <label htmlFor="keyword" className="text-sm font-medium text-[var(--text)]">Ключевое слово:</label>
                                     <input
                                         id="keyword"
                                         type="text"
@@ -273,21 +295,23 @@ export default function SettingsPage() {
                                         onChange={(e) => setKeyword(e.target.value)}
                                         placeholder="youtube"
                                         required
+                                        className="px-4 py-3 border border-[var(--border)] rounded text-sm bg-[var(--bg)] text-[var(--text)] font-inherit transition-colors focus:outline-none focus:border-[var(--google-blue)]"
                                     />
-                                    <small className="form-hint">
+                                    <small className="text-xs text-[var(--text-secondary)] mt-1">
                                         Слово для ввода в адресной строке (например, youtube)
                                     </small>
                                 </div>
-                                <div className="form-group">
-                                    <label htmlFor="description">Описание (необязательно):</label>
+                                <div className="flex flex-col gap-2">
+                                    <label htmlFor="description" className="text-sm font-medium text-[var(--text)]">Описание (необязательно):</label>
                                     <input
                                         id="description"
                                         type="text"
                                         value={description}
                                         onChange={(e) => setDescription(e.target.value)}
                                         placeholder="YouTube"
+                                        className="px-4 py-3 border border-[var(--border)] rounded text-sm bg-[var(--bg)] text-[var(--text)] font-inherit transition-colors focus:outline-none focus:border-[var(--google-blue)]"
                                     />
-                                    <small className="form-hint">
+                                    <small className="text-xs text-[var(--text-secondary)] mt-1">
                                         Название сайта для отображения в попапе
                                     </small>
                                 </div>
@@ -295,58 +319,61 @@ export default function SettingsPage() {
                         )}
                         {showAdvancedFields && (
                             <>
-                                <div className="form-group">
-                                    <label htmlFor="search-path">Путь для поиска (необязательно):</label>
+                                <div className="flex flex-col gap-2">
+                                    <label htmlFor="search-path" className="text-sm font-medium text-[var(--text)]">Путь для поиска (необязательно):</label>
                                     <input
                                         id="search-path"
                                         type="text"
                                         value={searchPath}
                                         onChange={(e) => setSearchPath(e.target.value)}
                                         placeholder="/search или /results"
+                                        className="px-4 py-3 border border-[var(--border)] rounded text-sm bg-[var(--bg)] text-[var(--text)] font-inherit transition-colors focus:outline-none focus:border-[var(--google-blue)]"
                                     />
-                                    <small className="form-hint">
+                                    <small className="text-xs text-[var(--text-secondary)] mt-1">
                                         Путь на сайте для поиска (например, /search, /results)
                                     </small>
                                 </div>
-                                <div className="form-group">
-                                    <label htmlFor="search-param">Параметр поиска (например, q, search_query, k):</label>
+                                <div className="flex flex-col gap-2">
+                                    <label htmlFor="search-param" className="text-sm font-medium text-[var(--text)]">Параметр поиска (например, q, search_query, k):</label>
                                     <input
                                         id="search-param"
                                         type="text"
                                         value={searchParam}
                                         onChange={(e) => setSearchParam(e.target.value)}
                                         placeholder="q"
+                                        className="px-4 py-3 border border-[var(--border)] rounded text-sm bg-[var(--bg)] text-[var(--text)] font-inherit transition-colors focus:outline-none focus:border-[var(--google-blue)]"
                                     />
-                                    <small className="form-hint">
+                                    <small className="text-xs text-[var(--text-secondary)] mt-1">
                                         Параметр запроса для поиска (например, q для Google, search_query для YouTube)
                                     </small>
                                 </div>
                             </>
                         )}
-                        {error && <div className="error-message">{error}</div>}
+                        {error && <div className="p-3 bg-[#fee] border border-[var(--google-red)] rounded text-[var(--google-red)] text-sm">{error}</div>}
                         <button 
                             type="submit" 
-                            className="submit-button" 
+                            className="flex items-center justify-center gap-2 px-6 py-3 bg-[var(--google-blue)] text-white border-none rounded text-sm font-medium cursor-pointer transition-colors hover:bg-[#3367d6] self-start disabled:opacity-60 disabled:cursor-not-allowed" 
                             disabled={isAdding}
                         >
-                            {isAdding && <div className="spinner"></div>}
+                            {isAdding && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>}
                             {isAdding ? "Сохранение..." : "Добавить"}
                         </button>
                     </form>
                 </section>
 
-                <section className="settings-section">
-                    <h2>Сохраненные сайты</h2>
+                <section className="bg-[var(--bg)] border border-[var(--border)] rounded-lg p-6">
+                    <h2 className="text-xl font-normal m-0 mb-5 text-[var(--text)]">Сохраненные сайты</h2>
                     {keywords.length === 0 ? (
-                        <p className="empty-message">Нет сохраненных сайтов</p>
+                        <p className="text-center text-[var(--text-secondary)] py-10 px-5 text-base">Нет сохраненных сайтов</p>
                     ) : (
-                        <div className="keywords-list">
+                        <div className="flex flex-col gap-3">
                             {keywords.map((item) => (
-                                <div key={item.keyword} className="keyword-item">
-                                    <div className="keyword-icon">
+                                <div key={item.keyword} className="flex items-center gap-4 p-4 bg-[var(--hover)] rounded-lg border border-[var(--border)]">
+                                    <div className="w-12 h-12 rounded-full bg-[var(--bg)] flex items-center justify-center overflow-hidden relative flex-shrink-0">
                                         <img
                                             src={getFaviconUrl(item.url)}
                                             alt={item.keyword}
+                                            className="w-full h-full object-cover"
                                             onError={(e) => {
                                                 const target = e.target as HTMLImageElement;
                                                 target.style.display = "none";
@@ -354,19 +381,19 @@ export default function SettingsPage() {
                                                 if (letter) letter.style.display = "block";
                                             }}
                                         />
-                                        <span className="icon-letter" style={{ display: "none" }}>
+                                        <span className="text-lg font-medium text-[var(--text)] hidden">
                                             {item.keyword.charAt(0).toUpperCase()}
                                         </span>
                                     </div>
-                                    <div className="keyword-info">
-                                        <div className="keyword-label">{item.keyword}</div>
-                                        <div className="keyword-url">{item.url}</div>
+                                    <div className="flex-1 flex flex-col gap-1">
+                                        <div className="text-base font-medium text-[var(--text)]">{item.keyword}</div>
+                                        <div className="text-sm text-[var(--text-secondary)] break-all">{item.url}</div>
                                         {item.description && (
-                                            <div className="keyword-description">{item.description}</div>
+                                            <div className="text-sm text-[var(--text-secondary)]">{item.description}</div>
                                         )}
                                     </div>
                                     <button
-                                        className="delete-button"
+                                        className="bg-transparent border-none text-xl cursor-pointer p-2 rounded transition-colors hover:bg-[var(--border)] flex-shrink-0"
                                         onClick={() => handleDelete(item.keyword)}
                                         title="Удалить"
                                     >
@@ -377,6 +404,18 @@ export default function SettingsPage() {
                         </div>
                     )}
                 </section>
+
+                {isAuthenticated && (
+                    <section className="bg-[var(--bg)] border border-[var(--border)] rounded-lg p-6">
+                        <h2 className="text-xl font-normal m-0 mb-5 text-[var(--text)]">Аккаунт</h2>
+                        <button
+                            onClick={handleLogout}
+                            className="px-6 py-3 bg-transparent text-[var(--text)] border border-[var(--border)] rounded text-sm font-medium cursor-pointer transition-all hover:bg-[var(--hover)] hover:border-[var(--google-red)] text-[var(--google-red)]"
+                        >
+                            Выйти из аккаунта
+                        </button>
+                    </section>
+                )}
             </div>
         </div>
     );

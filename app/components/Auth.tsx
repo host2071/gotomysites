@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { User } from "firebase/auth";
 import { login, register, loginWithGoogle, getCurrentUser, logout, onAuthChange } from "../lib/firebase/auth";
 import { initializeSync } from "../lib/storage/sync";
+import { resetLocalStorage } from "../lib/storage/local";
 
 export default function Auth() {
     const router = useRouter();
@@ -66,6 +67,8 @@ export default function Auth() {
     const handleLogout = async () => {
         try {
             await logout();
+            // Сбрасываем localStorage к начальным настройкам
+            resetLocalStorage();
             setUser(null);
         } catch (error: any) {
             setError(error.message || "Ошибка выхода");
@@ -74,7 +77,7 @@ export default function Auth() {
 
     if (loading) {
         return (
-            <div className="auth-loading">
+            <div className="flex justify-center items-center min-h-[200px] text-[var(--text-secondary)]">
                 <p>Загрузка...</p>
             </div>
         );
@@ -82,11 +85,11 @@ export default function Auth() {
 
     if (user) {
         return (
-            <div className="auth-user">
-                <div className="auth-user-info">
-                    <span className="auth-user-email">{user.email}</span>
+            <div className="flex items-center gap-3">
+                <div className="flex flex-col">
+                    <span className="text-sm text-[var(--text)]">{user.email}</span>
                 </div>
-                <button onClick={handleLogout} className="auth-logout-button">
+                <button onClick={handleLogout} className="px-4 py-2 bg-[var(--hover)] text-[var(--text)] border border-[var(--border)] rounded transition-all hover:bg-[var(--border)] text-sm cursor-pointer">
                     Выйти
                 </button>
             </div>
@@ -94,60 +97,62 @@ export default function Auth() {
     }
 
     return (
-        <div className="auth-container">
-            <div className="auth-form-wrapper">
-                <h2 className="auth-title">{isLogin ? "Вход" : "Регистрация"}</h2>
+        <div className="flex justify-center items-center min-h-screen p-5 bg-[var(--bg)]">
+            <div className="w-full max-w-[400px] bg-[var(--bg)] border border-[var(--border)] rounded-lg p-8 shadow-[0_2px_8px_var(--shadow)]">
+                <h2 className="text-2xl font-normal m-0 mb-6 text-center text-[var(--text)]">{isLogin ? "Вход" : "Регистрация"}</h2>
                 
                 {error && (
-                    <div className="auth-error">
+                    <div className="bg-[#fee] border border-[var(--google-red)] text-[var(--google-red)] p-3 rounded mb-4 text-sm">
                         {error}
                     </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="auth-form">
-                    <div className="auth-form-group">
+                <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                    <div className="flex flex-col">
                         <input
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             placeholder="Email"
                             required
-                            className="auth-input"
+                            className="px-4 py-3 border border-[var(--border)] rounded text-sm bg-[var(--bg)] text-[var(--text)] font-inherit transition-colors focus:outline-none focus:border-[var(--google-blue)] disabled:opacity-60 disabled:cursor-not-allowed"
                             disabled={isSubmitting}
                         />
                     </div>
-                    <div className="auth-form-group">
+                    <div className="flex flex-col">
                         <input
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             placeholder="Пароль"
                             required
-                            className="auth-input"
+                            className="px-4 py-3 border border-[var(--border)] rounded text-sm bg-[var(--bg)] text-[var(--text)] font-inherit transition-colors focus:outline-none focus:border-[var(--google-blue)] disabled:opacity-60 disabled:cursor-not-allowed"
                             disabled={isSubmitting}
                             minLength={6}
                         />
                     </div>
                     <button 
                         type="submit" 
-                        className="auth-submit-button"
+                        className="px-6 py-3 bg-[var(--google-blue)] text-white border-none rounded text-sm font-medium cursor-pointer transition-colors hover:bg-[#3367d6] disabled:opacity-60 disabled:cursor-not-allowed"
                         disabled={isSubmitting}
                     >
                         {isSubmitting ? "Загрузка..." : (isLogin ? "Войти" : "Зарегистрироваться")}
                     </button>
                 </form>
 
-                <div className="auth-divider">
-                    <span>или</span>
+                <div className="flex items-center my-6 text-center">
+                    <div className="flex-1 border-b border-[var(--border)]"></div>
+                    <span className="px-4 text-[var(--text-secondary)] text-sm">или</span>
+                    <div className="flex-1 border-b border-[var(--border)]"></div>
                 </div>
 
                 <button 
                     type="button" 
                     onClick={handleGoogleLogin}
-                    className="auth-google-button"
+                    className="w-full flex items-center justify-center gap-3 px-6 py-3 bg-[var(--bg)] text-[var(--text)] border border-[var(--border)] rounded text-sm font-medium cursor-pointer transition-all hover:bg-[var(--hover)] hover:border-[var(--google-blue)] disabled:opacity-60 disabled:cursor-not-allowed"
                     disabled={isSubmitting}
                 >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0">
                         <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
                         <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
                         <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
@@ -162,7 +167,7 @@ export default function Auth() {
                         setIsLogin(!isLogin);
                         setError("");
                     }}
-                    className="auth-toggle-button"
+                    className="w-full mt-4 p-2 bg-transparent border-none text-[var(--google-blue)] text-sm cursor-pointer underline transition-opacity hover:opacity-80 disabled:opacity-60 disabled:cursor-not-allowed"
                     disabled={isSubmitting}
                 >
                     {isLogin ? "Нет аккаунта? Зарегистрироваться" : "Уже есть аккаунт? Войти"}

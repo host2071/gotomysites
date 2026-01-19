@@ -48,14 +48,14 @@ export default function SitesGrid({ onSiteClick }: SitesGridProps) {
 
     if (sites.length === 0) {
         return (
-            <div className="sites-grid-empty">
+            <div className="text-center py-10 px-5 text-[var(--text-secondary)]">
                 <p>Нет сохраненных сайтов</p>
             </div>
         );
     }
 
     return (
-        <div className="sites-grid">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-6 py-5">
             {sites.map((site) => (
                 <SiteItem
                     key={site.keyword}

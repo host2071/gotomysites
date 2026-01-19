@@ -1,6 +1,13 @@
 import type { KeywordMapping, ParsedQuery, StorageData } from "../types";
 import { findKeyword, findKeywordSync, loadData } from "./storage/index";
 
+// Константы
+const DEFAULT_SEARCH_ENGINE = "https://google.com/search?q=";
+const GOOGLE_FAVICON_API = "https://www.google.com/s2/favicons";
+const HTTPS_PROTOCOL = "https://";
+const HTTP_PROTOCOL = "http://";
+const MIN_KEYWORD_LENGTH_FOR_FUZZY = 3;
+
 /**
  * Парсинг запроса
  * Разделяет введенный текст на ключевое слово и параметры запроса
@@ -15,33 +22,15 @@ export function parseQuery(text: string): ParsedQuery {
         return { keyword: "", query: "" };
     }
     
-    const parts = trimmed.split(/\s+/);
-    const keyword = parts[0].toLowerCase();
-    const query = parts.slice(1).join(" ").trim();
-    
-    return { keyword, query };
-}
-
-/**
- * Валидация URL
- * 
- * @param url - URL для валидации
- * @returns true если URL валиден, false иначе
- */
-export function isValidUrl(url: string): boolean {
-    try {
-        const parsedUrl = new URL(url);
-        return parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:";
-    } catch {
-        // Если URL не содержит протокол, попробуем добавить https://
-        try {
-            const urlWithProtocol = url.startsWith("//") ? `https:${url}` : `https://${url}`;
-            new URL(urlWithProtocol);
-            return true;
-        } catch {
-            return false;
-        }
+    const spaceIndex = trimmed.indexOf(" ");
+    if (spaceIndex === -1) {
+        return { keyword: trimmed.toLowerCase(), query: "" };
     }
+    
+    return {
+        keyword: trimmed.slice(0, spaceIndex).toLowerCase(),
+        query: trimmed.slice(spaceIndex + 1).trim()
+    };
 }
 
 /**
@@ -54,7 +43,7 @@ export function normalizeUrl(url: string): string {
     if (!url) return "";
     
     // Если уже полный URL, вернуть как есть
-    if (url.startsWith("http://") || url.startsWith("https://")) {
+    if (url.startsWith(HTTPS_PROTOCOL) || url.startsWith(HTTP_PROTOCOL)) {
         return url;
     }
     
@@ -64,35 +53,47 @@ export function normalizeUrl(url: string): string {
     }
     
     // Иначе добавить https://
-    return `https://${url}`;
+    return `${HTTPS_PROTOCOL}${url}`;
 }
 
 /**
- * Формирование URL с параметрами поиска.
- * Может принимать как обычную строку URL, так и объект `KeywordMapping`,
- * чтобы автоматически учитывать `searchPath` и `searchParam`.
+ * Валидация URL
  * 
- * @param target - базовый URL или описание сайта из настроек
- * @param query - поисковая строка
- * @param searchParamOverride - параметр поиска (при передаче строкового URL)
- * @returns URL с параметрами поиска
+ * @param url - URL для валидации
+ * @returns true если URL валиден, false иначе
  */
-export function buildSearchUrl(
-    target: string | KeywordMapping,
-    query: string,
-    searchParamOverride?: string
-): string {
-    const { baseUrl, searchParam } = resolveSearchTarget(target, searchParamOverride);
+export function isValidUrl(url: string): boolean {
+    if (!url) return false;
     
-    if (!query || !searchParam) {
-        return baseUrl;
+    try {
+        const normalized = normalizeUrl(url);
+        const parsedUrl = new URL(normalized);
+        return parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:";
+    } catch {
+        return false;
     }
-    
-    const url = new URL(baseUrl);
-    url.searchParams.set(searchParam, query);
-    return url.toString();
 }
 
+/**
+ * Объединение базового URL с путем
+ * 
+ * @param base - базовый URL
+ * @param path - путь для добавления
+ * @returns объединенный URL
+ */
+function buildPath(base: string, path: string): string {
+    const trimmedBase = base.replace(/\/$/, "");
+    const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+    return `${trimmedBase}${normalizedPath}`;
+}
+
+/**
+ * Разрешение целевого URL для поиска
+ * 
+ * @param target - базовый URL или описание сайта из настроек
+ * @param searchParamOverride - параметр поиска (при передаче строкового URL)
+ * @returns объект с базовым URL и параметром поиска
+ */
 function resolveSearchTarget(
     target: string | KeywordMapping,
     searchParamOverride?: string
@@ -115,25 +116,137 @@ function resolveSearchTarget(
     };
 }
 
-function buildPath(base: string, path: string): string {
-    const trimmedBase = base.replace(/\/$/, "");
-    const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-    return `${trimmedBase}${normalizedPath}`;
+/**
+ * Формирование URL с параметрами поиска.
+ * Может принимать как обычную строку URL, так и объект `KeywordMapping`,
+ * чтобы автоматически учитывать `searchPath` и `searchParam`.
+ * 
+ * @param target - базовый URL или описание сайта из настроек
+ * @param query - поисковая строка
+ * @param searchParamOverride - параметр поиска (при передаче строкового URL)
+ * @returns URL с параметрами поиска
+ */
+export function buildSearchUrl(
+    target: string | KeywordMapping,
+    query: string,
+    searchParamOverride?: string
+): string {
+    if (!query) {
+        const { baseUrl } = resolveSearchTarget(target, searchParamOverride);
+        return baseUrl;
+    }
+    
+    const { baseUrl, searchParam } = resolveSearchTarget(target, searchParamOverride);
+    
+    if (!searchParam) {
+        return baseUrl;
+    }
+    
+    try {
+        const url = new URL(baseUrl);
+        url.searchParams.set(searchParam, query);
+        return url.toString();
+    } catch {
+        // Если не удалось создать URL, возвращаем базовый
+        return baseUrl;
+    }
 }
 
 /**
  * Получение URL для favicon через Google API
  * 
  * @param url - URL сайта
- * @returns URL favicon
+ * @returns URL favicon или пустую строку при ошибке
  */
 export function getFaviconUrl(url: string): string {
+    if (!url) return "";
+    
     try {
-        const urlObj = new URL(url);
-        return `https://www.google.com/s2/favicons?domain=${urlObj.hostname}&sz=64`;
+        const urlObj = new URL(normalizeUrl(url));
+        return `${GOOGLE_FAVICON_API}?domain=${urlObj.hostname}&sz=64`;
     } catch {
         return "";
     }
+}
+
+/**
+ * Получение URL поиска по умолчанию
+ * 
+ * @param query - поисковый запрос
+ * @param defaultEngine - опциональный поисковик по умолчанию
+ * @returns URL для поиска
+ */
+function getDefaultSearchUrl(query: string, defaultEngine?: string): string {
+    if (defaultEngine) {
+        return buildSearchUrl(defaultEngine, query, "q");
+    }
+    return `${DEFAULT_SEARCH_ENGINE}${encodeURIComponent(query)}`;
+}
+
+/**
+ * Поиск ключевого слова с использованием нечеткого совпадения
+ * 
+ * @param keywords - список ключевых слов
+ * @param keywordLower - искомое ключевое слово в нижнем регистре
+ * @returns найденное ключевое слово или null
+ */
+function findFuzzyKeyword(
+    keywords: KeywordMapping[],
+    keywordLower: string
+): KeywordMapping | null {
+    // Сначала ищем точное совпадение начала
+    const startsWithMatch = keywords.find(k => 
+        k.keyword.toLowerCase().startsWith(keywordLower)
+    );
+    if (startsWithMatch) return startsWithMatch;
+    
+    // Затем частичное совпадение или совпадение в описании
+    return keywords.find(k => {
+        const kLower = k.keyword.toLowerCase();
+        return kLower.includes(keywordLower) || 
+               k.description?.toLowerCase().includes(keywordLower);
+    }) || null;
+}
+
+/**
+ * Поиск ключевого слова в данных
+ * 
+ * @param keyword - искомое ключевое слово
+ * @param currentData - данные для поиска
+ * @returns найденное ключевое слово или null
+ */
+async function findKeywordMapping(
+    keyword: string,
+    currentData: StorageData
+): Promise<KeywordMapping | null> {
+    const keywordLower = keyword.toLowerCase();
+    
+    // Сначала пытаемся найти точное совпадение
+    let mapping = findKeywordSync(keyword);
+    if (!mapping) {
+        mapping = await findKeyword(keyword);
+    }
+    
+    // Если точного совпадения нет, используем нечеткий поиск (только если больше 3 букв)
+    if (!mapping && keywordLower.length > MIN_KEYWORD_LENGTH_FOR_FUZZY) {
+        mapping = findFuzzyKeyword(currentData.keywords, keywordLower);
+    }
+    
+    return mapping || null;
+}
+
+/**
+ * Формирование целевого URL для найденного ключевого слова
+ * 
+ * @param mapping - найденное ключевое слово
+ * @param searchQuery - поисковый запрос
+ * @returns целевой URL
+ */
+function buildTargetUrl(mapping: KeywordMapping, searchQuery: string): string {
+    if (!searchQuery) {
+        return normalizeUrl(mapping.url);
+    }
+    return buildSearchUrl(mapping, searchQuery);
 }
 
 /**
@@ -158,7 +271,7 @@ export async function processSearchQuery(
     
     // Если нет ключевого слова, используем поиск по умолчанию
     if (!keyword) {
-        return `https://google.com/search?q=${encodeURIComponent(trimmedQuery)}`;
+        return getDefaultSearchUrl(trimmedQuery);
     }
 
     // Загружаем данные, если не были переданы
@@ -170,57 +283,21 @@ export async function processSearchQuery(
             currentData = await loadData();
         } catch (err) {
             console.error("Error loading data:", err);
-            // Fallback на Google поиск
-            return `https://google.com/search?q=${encodeURIComponent(trimmedQuery)}`;
+            return getDefaultSearchUrl(trimmedQuery);
         }
     }
 
-    const keywordLower = keyword.toLowerCase();
-    
-    // Сначала пытаемся найти точное совпадение
-    // Для неавторизованных используем синхронную версию
-    let mapping = findKeywordSync(keyword);
-    if (!mapping) {
-        // Если не нашли синхронно, пробуем асинхронно (для авторизованных)
-        mapping = await findKeyword(keyword);
-    }
-    
-    // Если точного совпадения нет, ищем по первым буквам
-    if (!mapping) {
-        const matches = currentData.keywords
-            .filter(k => {
-                const kLower = k.keyword.toLowerCase();
-                return kLower.startsWith(keywordLower) || 
-                       kLower.includes(keywordLower) ||
-                       k.description?.toLowerCase().includes(keywordLower);
-            });
-        
-        if (matches.length > 0) {
-            mapping = matches[0];
-        }
-    }
+    // Ищем ключевое слово
+    const mapping = await findKeywordMapping(keyword, currentData);
     
     // Если сайт не найден, используем поиск по умолчанию
     if (!mapping) {
-        if (currentData.settings?.defaultSearchEngine) {
-            return buildSearchUrl(
-                currentData.settings.defaultSearchEngine,
-                trimmedQuery,
-                "q"
-            );
-        } else {
-            // Fallback на Google поиск
-            return `https://google.com/search?q=${encodeURIComponent(trimmedQuery)}`;
-        }
+        return getDefaultSearchUrl(
+            trimmedQuery,
+            currentData.settings?.defaultSearchEngine
+        );
     }
     
-    // Формируем URL
-    let targetUrl = normalizeUrl(mapping.url);
-    
-    if (searchQuery) {
-        targetUrl = buildSearchUrl(mapping, searchQuery);
-    }
-    
-    return targetUrl;
+    // Формируем целевой URL
+    return buildTargetUrl(mapping, searchQuery);
 }
-

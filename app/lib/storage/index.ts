@@ -1,6 +1,6 @@
 "use client";
 
-import { getCurrentUser } from "../firebase/auth";
+import { getCurrentUser, onAuthChange } from "../firebase/auth";
 import {
   syncFromCloud,
   addSiteToUser,
@@ -245,6 +245,7 @@ export const subscribeToDataChanges = (
   let storageListener: ((e: Event) => void) | null = null;
   let customEventListener: ((e: Event) => void) | null = null;
   let isUnsubscribed = false;
+  let authUnsubscribe: (() => void) | null = null;
 
   const updateLocalData = () => {
     const localData = loadLocalData();
@@ -255,12 +256,36 @@ export const subscribeToDataChanges = (
     });
   };
 
-  getCurrentUser().then((user) => {
+  const setupSubscription = async () => {
     if (isUnsubscribed) return;
+
+    // Отписываемся от предыдущей подписки, если она есть
+    if (unsubscribe) {
+      unsubscribe();
+      unsubscribe = null;
+    }
+
+    // Удаляем предыдущие слушатели localStorage
+    if (typeof window !== "undefined") {
+      if (storageListener) {
+        window.removeEventListener("storage", storageListener);
+      }
+      if (customEventListener) {
+        window.removeEventListener("localStorage-update", customEventListener);
+      }
+      storageListener = null;
+      customEventListener = null;
+    }
+
+    const user = await getCurrentUser();
     
+    if (isUnsubscribed) return;
+
     if (user) {
       // Авторизованный пользователь - подписываемся на изменения в Firebase
       unsubscribe = subscribeToUserChanges(user, (cloudData) => {
+        if (isUnsubscribed) return;
+
         if (cloudData) {
           // Обновляем localStorage при изменении данных в Firebase
           const storageData: StorageData = {
@@ -288,6 +313,7 @@ export const subscribeToDataChanges = (
       // Подписываемся на изменения localStorage (для обновления в других вкладках и текущей)
       if (typeof window !== "undefined") {
         storageListener = (e: Event) => {
+          if (isUnsubscribed) return;
           const storageEvent = e as StorageEvent;
           // Событие из других вкладок
           if (storageEvent.key === "goWebsiteLauncherData" || storageEvent.key === "goWebsiteLauncherOrder") {
@@ -296,6 +322,7 @@ export const subscribeToDataChanges = (
         };
         
         customEventListener = () => {
+          if (isUnsubscribed) return;
           // Кастомное событие из текущей вкладки
           updateLocalData();
         };
@@ -304,12 +331,26 @@ export const subscribeToDataChanges = (
         window.addEventListener("localStorage-update", customEventListener);
       }
     }
+  };
+
+  // Инициализируем подписку
+  setupSubscription();
+
+  // Подписываемся на изменения статуса авторизации
+  authUnsubscribe = onAuthChange(() => {
+    // При изменении статуса авторизации переподписываемся
+    setupSubscription();
   });
 
   return () => {
     isUnsubscribed = true;
     if (unsubscribe) {
       unsubscribe();
+      unsubscribe = null;
+    }
+    if (authUnsubscribe) {
+      authUnsubscribe();
+      authUnsubscribe = null;
     }
     if (typeof window !== "undefined") {
       if (storageListener) {

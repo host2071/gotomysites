@@ -327,26 +327,39 @@ export const subscribeToUserChanges = (
 
   const userRef = doc(db, USERS_COLLECTION, user.uid);
 
-  return onSnapshot(userRef, async (docSnap) => {
-    if (docSnap.exists()) {
-      const data = docSnap.data() as UserData;
-      
-      const keywords: KeywordMapping[] = data.sites.map((userSite) => ({
-        keyword: userSite.keyword,
-        url: userSite.url,
-        description: userSite.description,
-        searchPath: userSite.searchPath,
-        searchParam: userSite.searchParam,
-      }));
+  return onSnapshot(
+    userRef,
+    async (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data() as UserData;
+        
+        const keywords: KeywordMapping[] = data.sites.map((userSite) => ({
+          keyword: userSite.keyword,
+          url: userSite.url,
+          description: userSite.description,
+          searchPath: userSite.searchPath,
+          searchParam: userSite.searchParam,
+        }));
 
-      callback({
-        keywords,
-        order: data.order || [],
-        settings: data.settings,
-      });
-    } else {
-      callback(null);
+        callback({
+          keywords,
+          order: data.order || [],
+          settings: data.settings,
+        });
+      } else {
+        callback(null);
+      }
+    },
+    (error) => {
+      // Обрабатываем ошибки доступа (например, после выхода из аккаунта)
+      if (error.code === 'permission-denied') {
+        // Пользователь больше не авторизован - возвращаем null и не показываем ошибку
+        callback(null);
+        return;
+      }
+      // Для других ошибок логируем, но не прерываем работу
+      console.error("Error in snapshot listener:", error);
     }
-  });
+  );
 };
 

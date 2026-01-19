@@ -32,9 +32,9 @@ export default function SearchPageContent() {
 
     // Показываем загрузку во время поиска
     return (
-        <div className="search-page-container">
-            <div className="search-loading-text">Поиск...</div>
-            <div className="search-query-text">{query}</div>
+        <div className="flex flex-col items-center justify-center min-h-screen gap-3 px-5">
+            <div className="text-lg font-normal">Поиск...</div>
+            <div className="text-sm text-[var(--text-secondary)] opacity-70">{query}</div>
         </div>
     );
 }
