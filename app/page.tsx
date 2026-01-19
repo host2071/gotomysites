@@ -8,7 +8,7 @@ import Header from "./components/Header";
 import { getCurrentUser } from "./lib/firebase/auth";
 import { initializeSync } from "./lib/storage/sync";
 
-const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME;
+const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || "Go My Sites";
 
 export default function Home() {
     useEffect(() => {

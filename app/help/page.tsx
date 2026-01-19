@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME;
+const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || "Go My Sites";
 
 export default function HelpPage() {
     return (

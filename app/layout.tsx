@@ -12,7 +12,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME;
+const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || "Go My Sites";
 
 export const metadata: Metadata = {
   title: APP_NAME,
