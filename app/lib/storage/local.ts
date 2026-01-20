@@ -160,14 +160,14 @@ export function saveOrder(order: string[]): void {
 export function resetLocalStorage(): void {
     if (typeof window === "undefined") return;
     
-    // Удаляем все данные пользователя
+    // Remove all user data
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(ORDER_KEY);
     
-    // Устанавливаем начальные настройки
+    // Set initial settings
     localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_DATA));
     
-    // Отправляем событие для обновления UI в других вкладках
+    // Dispatch event to update UI in other tabs
     window.dispatchEvent(new CustomEvent("localStorage-update"));
 }
 

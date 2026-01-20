@@ -26,7 +26,7 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
     
     const { keywords, data, isLoading } = useKeywordsData();
 
-    // Загружаем популярные сайты при фокусе на пустом input
+    // Load popular sites when focusing on empty input
     const loadPopularSuggestions = useCallback(async () => {
         if (query.trim() || isLoading) return;
 
@@ -43,7 +43,7 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
                 }
             }
 
-            // Fallback на локальные keywords
+            // Fallback to local keywords
             const localKeywords = keywords.length > 0 ? keywords : getKeywordsSync();
             if (localKeywords.length > 0) {
                 setSuggestions(localKeywords.map(k => k.keyword));
@@ -59,7 +59,7 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
         }
     }, [query, keywords, isLoading]);
 
-    // Фильтрация подсказок при вводе
+    // Filter suggestions as user types
     const filteredSuggestions = useMemo(() => {
         if (!query.trim()) return [];
         
@@ -78,7 +78,7 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
             .map((k: KeywordMapping) => k.keyword);
     }, [query, keywords]);
 
-    // Обновляем подсказки при изменении фильтрации
+    // Update suggestions when filtering changes
     useEffect(() => {
         if (query.trim()) {
             setSuggestions(filteredSuggestions);
@@ -89,7 +89,7 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
         }
     }, [filteredSuggestions, query]);
 
-    // Закрываем подсказки при клике вне элемента
+    // Close suggestions when clicking outside the element
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (
@@ -269,7 +269,7 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
                             type="button"
                             onClick={handleClear}
                             className="bg-transparent border-none cursor-pointer p-1 ml-2 flex items-center justify-center text-[var(--text-secondary)] rounded-full transition-colors hover:bg-[var(--hover)]"
-                            aria-label="Очистить"
+                            aria-label="Clear"
                         >
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                                 <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="currentColor"/>

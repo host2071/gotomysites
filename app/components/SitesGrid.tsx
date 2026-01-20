@@ -13,15 +13,15 @@ export default function SitesGrid({ onSiteClick }: SitesGridProps) {
     const [sites, setSites] = useState<KeywordMapping[]>([]);
 
     useEffect(() => {
-        // Сначала загружаем сайты из localStorage для быстрой загрузки
+        // First load sites from localStorage for fast loading
         const keywords = getKeywordsSync();
         setSites(keywords);
 
-        // Затем синхронизируем с Firebase в фоне (не блокируем загрузку)
+        // Then sync with Firebase in background (non-blocking)
         const loadSitesAsync = async () => {
             try {
                 const keywordsAsync = await getKeywords();
-                // Обновляем только если данные изменились
+                // Update only if data has changed
                 if (keywordsAsync.length !== keywords.length) {
                     setSites(keywordsAsync);
                 }
@@ -32,7 +32,7 @@ export default function SitesGrid({ onSiteClick }: SitesGridProps) {
 
         loadSitesAsync();
 
-        // Подписываемся на изменения
+        // Subscribe to changes
         const unsubscribe = subscribeToDataChanges((data) => {
             if (data) {
                 setSites(data.keywords || []);
@@ -49,7 +49,7 @@ export default function SitesGrid({ onSiteClick }: SitesGridProps) {
     if (sites.length === 0) {
         return (
             <div className="text-center py-10 px-5 text-[var(--text-secondary)]">
-                <p>Нет сохраненных сайтов</p>
+                <p>No saved sites</p>
             </div>
         );
     }

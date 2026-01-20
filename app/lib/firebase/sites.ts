@@ -23,43 +23,43 @@ export interface Site extends KeywordMapping {
   createdAt: Timestamp;
   updatedAt: Timestamp;
   usageCount: number;
-  update?: boolean; // Флаг, разрешающий обновление сайта пользователем
+  update?: boolean; // Flag allowing site update by user
 }
 
 const SITES_COLLECTION = "sites";
 
 /**
- * Создать или получить существующий сайт
+ * Create or get existing site
  */
 export const getOrCreateSite = async (
   siteData: KeywordMapping
 ): Promise<string> => {
   if (!db) throw new Error("Firebase not initialized");
 
-  // Проверяем, существует ли сайт с таким keyword
+  // Check if site with this keyword exists
   const sitesRef = collection(db, SITES_COLLECTION);
   const q = query(sitesRef, where("keyword", "==", siteData.keyword.toLowerCase()));
   const querySnapshot = await getDocs(q);
 
   if (!querySnapshot.empty) {
-    // Сайт существует
+    // Site exists
     const existingSiteDoc = querySnapshot.docs[0];
     const existingSite = existingSiteDoc.data() as Site;
     const siteId = existingSiteDoc.id;
     
-    // Обновляем счетчик использования
+    // Update usage counter
     await updateDoc(doc(db, SITES_COLLECTION, siteId), {
       usageCount: increment(1),
       updatedAt: serverTimestamp(),
     });
     
-    // Если флаг update не false, обновляем данные сайта (если новые поля заполнены)
+    // If update flag is not false, update site data (if new fields are filled)
     if (existingSite.update !== false) {
       const updateData: any = {
         updatedAt: serverTimestamp(),
       };
       
-      // Обновляем только заполненные поля
+      // Update only filled fields
       if (siteData.url && siteData.url !== existingSite.url) {
         updateData.url = siteData.url;
       }
@@ -73,7 +73,7 @@ export const getOrCreateSite = async (
         updateData.searchParam = siteData.searchParam || null;
       }
       
-      // Обновляем только если есть изменения
+      // Update only if there are changes
       if (Object.keys(updateData).length > 1) {
         await updateDoc(doc(db, SITES_COLLECTION, siteId), updateData);
       }
@@ -82,7 +82,7 @@ export const getOrCreateSite = async (
     return siteId;
   }
 
-  // Создаем новый сайт
+  // Create new site
   const newSiteRef = doc(collection(db, SITES_COLLECTION));
   await setDoc(newSiteRef, {
     keyword: siteData.keyword.toLowerCase(),
@@ -93,14 +93,14 @@ export const getOrCreateSite = async (
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
     usageCount: 1,
-    update: true, // По умолчанию разрешаем обновление
+    update: true, // Allow updates by default
   });
 
   return newSiteRef.id;
 };
 
 /**
- * Получить сайт по ID
+ * Get site by ID
  */
 export const getSiteById = async (siteId: string): Promise<Site | null> => {
   if (!db) throw new Error("Firebase not initialized");
@@ -119,7 +119,7 @@ export const getSiteById = async (siteId: string): Promise<Site | null> => {
 };
 
 /**
- * Получить сайт по keyword
+ * Get site by keyword
  */
 export const getSiteByKeyword = async (keyword: string): Promise<Site | null> => {
   if (!db) throw new Error("Firebase not initialized");
@@ -140,7 +140,7 @@ export const getSiteByKeyword = async (keyword: string): Promise<Site | null> =>
 };
 
 /**
- * Получить все популярные сайты (для публичного каталога)
+ * Get all popular sites (for public catalog)
  */
 export const getPopularSites = async (limitCount: number = 10): Promise<Site[]> => {
   if (!db) throw new Error("Firebase not initialized");
@@ -156,9 +156,9 @@ export const getPopularSites = async (limitCount: number = 10): Promise<Site[]> 
 };
 
 /**
- * Получить популярные сайты пользователя (отфильтрованные по доступным keywords)
- * @param userKeywords - список keywords, доступных пользователю
- * @param limitCount - максимальное количество сайтов
+ * Get popular user sites (filtered by available keywords)
+ * @param userKeywords - list of keywords available to user
+ * @param limitCount - maximum number of sites
  */
 export const getPopularUserSites = async (
   userKeywords: string[],
@@ -169,16 +169,16 @@ export const getPopularUserSites = async (
   }
 
   try {
-    // Получаем все популярные сайты
-    const popularSites = await getPopularSites(limitCount * 2); // Берем больше, чтобы после фильтрации осталось достаточно
+    // Get all popular sites
+    const popularSites = await getPopularSites(limitCount * 2); // Get more to ensure enough after filtering
     
-    // Фильтруем только те, что есть у пользователя (case-insensitive)
+    // Filter only those available to user (case-insensitive)
     const userKeywordsLower = userKeywords.map(k => k.toLowerCase());
     const filteredSites = popularSites.filter(site => 
       userKeywordsLower.includes(site.keyword.toLowerCase())
     );
     
-    // Возвращаем отсортированные по usageCount (они уже отсортированы)
+    // Return sorted by usageCount (already sorted)
     return filteredSites.slice(0, limitCount);
   } catch (error) {
     console.error("Error getting popular user sites:", error);
@@ -187,7 +187,7 @@ export const getPopularUserSites = async (
 };
 
 /**
- * Удалить сайт (уменьшить счетчик использования)
+ * Remove site (decrease usage counter)
  */
 export const removeSiteUsage = async (siteId: string): Promise<void> => {
   if (!db) throw new Error("Firebase not initialized");
@@ -200,7 +200,7 @@ export const removeSiteUsage = async (siteId: string): Promise<void> => {
 };
 
 /**
- * Обновить сайт (только если флаг update разрешает)
+ * Update site (only if update flag allows)
  */
 export const updateSite = async (
   siteId: string,
@@ -217,12 +217,12 @@ export const updateSite = async (
 
   const site = siteSnap.data() as Site;
 
-  // Проверяем флаг update
+  // Check update flag
   if (site.update === false) {
     throw new Error("Site is not allowed");
   }
 
-  // Обновляем только переданные поля
+  // Update only provided fields
   const updateData: any = {
     updatedAt: serverTimestamp(),
   };
@@ -247,7 +247,7 @@ export const updateSite = async (
 };
 
 /**
- * Установить флаг update для сайта
+ * Set update flag for site
  */
 export const setSiteUpdateFlag = async (
   siteId: string,

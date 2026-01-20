@@ -10,19 +10,19 @@ export default function SearchPageContent() {
 
     useEffect(() => {
         if (!query.trim()) {
-            // Если нет запроса, перенаправляем на главную
+            // If no query, redirect to home
             window.location.href = "/";
             return;
         }
 
         const performSearch = async () => {
-            // Используем универсальную функцию обработки поиска
+            // Use universal search processing function
             const targetUrl = await processSearchQuery(query);
             
             if (targetUrl) {
                 window.location.href = targetUrl;
             } else {
-                // Если запрос пустой, перенаправляем на главную
+                // If query is empty, redirect to home
                 window.location.href = "/";
             }
         };
@@ -30,10 +30,10 @@ export default function SearchPageContent() {
         performSearch();
     }, [query]);
 
-    // Показываем загрузку во время поиска
+    // Show loading during search
     return (
         <div className="flex flex-col items-center justify-center min-h-screen gap-3 px-5">
-            <div className="text-lg font-normal">Поиск...</div>
+            <div className="text-lg font-normal">Searching...</div>
             <div className="text-sm text-[var(--text-secondary)] opacity-70">{query}</div>
         </div>
     );

@@ -21,22 +21,22 @@ import {
 import type { StorageData, KeywordMapping } from "../../types";
 
 /**
- * Загрузить данные пользователя
- * Для авторизованных - сначала из localStorage (быстро), затем синхронизация с Firebase в фоне
- * Для неавторизованных - из localStorage
+ * Load user data
+ * For authenticated users - first from localStorage (fast), then sync with Firebase in background
+ * For unauthenticated users - from localStorage
  */
 export const loadData = async (): Promise<StorageData> => {
   const user = await getCurrentUser();
   
   if (!user) {
-    // Неавторизованный пользователь - используем localStorage
+    // Unauthenticated user - use localStorage
     return loadLocalData();
   }
 
-  // Авторизованный пользователь - сначала возвращаем данные из localStorage (быстро)
+  // Authenticated user - first return data from localStorage (fast)
   const localData = loadLocalData();
   
-  // Затем синхронизируем с Firebase в фоне (не блокируем загрузку)
+  // Then sync with Firebase in background (non-blocking)
   syncFromCloud(user).then((cloudData) => {
     if (cloudData) {
       const storageData: StorageData = {
@@ -45,7 +45,7 @@ export const loadData = async (): Promise<StorageData> => {
           defaultSearchEngine: "https://google.com/search?q=",
         },
       };
-      // Обновляем localStorage данными из Firebase
+      // Update localStorage with data from Firebase
       saveLocalData(storageData);
       if (cloudData.order) {
         saveLocalOrder(cloudData.order);
@@ -55,30 +55,30 @@ export const loadData = async (): Promise<StorageData> => {
     console.error("Error syncing from cloud:", error);
   });
 
-  // Возвращаем данные из localStorage немедленно
+  // Return data from localStorage immediately
   return localData;
 };
 
 /**
- * Сохранить данные
- * Для авторизованных - в Firebase и localStorage, для неавторизованных - в localStorage
+ * Save data
+ * For authenticated users - to Firebase and localStorage, for unauthenticated - to localStorage
  */
 export const saveData = async (data: StorageData): Promise<void> => {
   const user = await getCurrentUser();
   
-  // Всегда сохраняем в localStorage для быстрого доступа
+  // Always save to localStorage for fast access
   saveLocalData(data);
-  // Отправляем событие для обновления в текущей вкладке
+  // Dispatch event to update in current tab
   if (typeof window !== "undefined") {
     window.dispatchEvent(new CustomEvent("localStorage-update"));
   }
   
   if (!user) {
-    // Неавторизованный пользователь - только localStorage
+    // Unauthenticated user - only localStorage
     return;
   }
 
-  // Авторизованный пользователь - также сохраняем в Firebase
+  // Authenticated user - also save to Firebase
   const { syncToCloud } = await import("../firebase/sync");
   try {
     await syncToCloud(user, data.keywords, [], data.settings);
@@ -88,21 +88,21 @@ export const saveData = async (data: StorageData): Promise<void> => {
 };
 
 /**
- * Получить список ключевых слов
- * Для авторизованных - сначала из localStorage (быстро), затем синхронизация с Firebase в фоне
- * Для неавторизованных - из localStorage
+ * Get keywords list
+ * For authenticated users - first from localStorage (fast), then sync with Firebase in background
+ * For unauthenticated users - from localStorage
  */
 export const getKeywords = async (): Promise<KeywordMapping[]> => {
   const user = await getCurrentUser();
   
-  // Всегда возвращаем из localStorage для быстрого доступа
+  // Always return from localStorage for fast access
   const localKeywords = getLocalKeywords();
   
   if (user) {
-    // Авторизованный пользователь - синхронизируем с Firebase в фоне
+    // Authenticated user - sync with Firebase in background
     syncFromCloud(user).then((cloudData) => {
       if (cloudData && cloudData.keywords.length > 0) {
-        // Обновляем localStorage данными из Firebase
+        // Update localStorage with data from Firebase
         const storageData: StorageData = {
           keywords: cloudData.keywords,
           settings: cloudData.settings || {
@@ -123,33 +123,33 @@ export const getKeywords = async (): Promise<KeywordMapping[]> => {
 };
 
 /**
- * Синхронная версия для быстрого доступа
- * Всегда возвращает данные из localStorage
+ * Synchronous version for fast access
+ * Always returns data from localStorage
  */
 export const getKeywordsSync = (): KeywordMapping[] => {
   return getLocalKeywords();
 };
 
 /**
- * Добавить ключевое слово
- * Для авторизованных - в Firebase и localStorage, для неавторизованных - в localStorage
+ * Add keyword
+ * For authenticated users - to Firebase and localStorage, for unauthenticated - to localStorage
  */
 export const addKeyword = async (keyword: KeywordMapping): Promise<void> => {
   const user = await getCurrentUser();
   
-  // Всегда сохраняем в localStorage для быстрого доступа
+  // Always save to localStorage for fast access
   addLocalKeyword(keyword);
-  // Отправляем событие для обновления в текущей вкладке
+  // Dispatch event to update in current tab
   if (typeof window !== "undefined") {
     window.dispatchEvent(new CustomEvent("localStorage-update"));
   }
   
   if (!user) {
-    // Неавторизованный пользователь - только localStorage
+    // Unauthenticated user - only localStorage
     return;
   }
 
-  // Авторизованный пользователь - также сохраняем в Firebase
+  // Authenticated user - also save to Firebase
   try {
     await addSiteToUser(user, keyword);
   } catch (error) {
@@ -158,25 +158,25 @@ export const addKeyword = async (keyword: KeywordMapping): Promise<void> => {
 };
 
 /**
- * Удалить ключевое слово
- * Для авторизованных - из Firebase и localStorage, для неавторизованных - из localStorage
+ * Remove keyword
+ * For authenticated users - from Firebase and localStorage, for unauthenticated - from localStorage
  */
 export const removeKeyword = async (keyword: string): Promise<void> => {
   const user = await getCurrentUser();
   
-  // Всегда удаляем из localStorage для быстрого доступа
+  // Always remove from localStorage for fast access
   removeLocalKeyword(keyword);
-  // Отправляем событие для обновления в текущей вкладке
+  // Dispatch event to update in current tab
   if (typeof window !== "undefined") {
     window.dispatchEvent(new CustomEvent("localStorage-update"));
   }
   
   if (!user) {
-    // Неавторизованный пользователь - только localStorage
+    // Unauthenticated user - only localStorage
     return;
   }
 
-  // Авторизованный пользователь - также удаляем из Firebase
+  // Authenticated user - also remove from Firebase
   try {
     await removeSiteFromUser(user, keyword);
   } catch (error) {
@@ -185,49 +185,49 @@ export const removeKeyword = async (keyword: string): Promise<void> => {
 };
 
 /**
- * Найти ключевое слово
- * Всегда ищет в localStorage для быстрого доступа
+ * Find keyword
+ * Always searches in localStorage for fast access
  */
 export const findKeyword = async (keyword: string): Promise<KeywordMapping | null> => {
-  // Используем синхронную версию для быстрого поиска
+  // Use synchronous version for fast search
   return findLocalKeyword(keyword);
 };
 
 /**
- * Синхронная версия для неавторизованных пользователей
+ * Synchronous version for unauthenticated users
  */
 export const findKeywordSync = (keyword: string): KeywordMapping | null => {
   return findLocalKeyword(keyword);
 };
 
 /**
- * Получить порядок сайтов
- * Всегда из localStorage для быстрого доступа
+ * Get site order
+ * Always from localStorage for fast access
  */
 export const getOrder = async (): Promise<string[]> => {
   return getLocalOrder() || [];
 };
 
 /**
- * Сохранить порядок сайтов
- * Для авторизованных - в Firebase и localStorage, для неавторизованных - в localStorage
+ * Save site order
+ * For authenticated users - to Firebase and localStorage, for unauthenticated - to localStorage
  */
 export const saveOrder = async (order: string[]): Promise<void> => {
   const user = await getCurrentUser();
   
-  // Всегда сохраняем в localStorage для быстрого доступа
+  // Always save to localStorage for fast access
   saveLocalOrder(order);
-  // Отправляем событие для обновления в текущей вкладке
+  // Dispatch event to update in current tab
   if (typeof window !== "undefined") {
     window.dispatchEvent(new CustomEvent("localStorage-update"));
   }
   
   if (!user) {
-    // Неавторизованный пользователь - только localStorage
+    // Unauthenticated user - only localStorage
     return;
   }
 
-  // Авторизованный пользователь - также сохраняем в Firebase
+  // Authenticated user - also save to Firebase
   try {
     await updateUserOrder(user, order);
   } catch (error) {
@@ -236,7 +236,7 @@ export const saveOrder = async (order: string[]): Promise<void> => {
 };
 
 /**
- * Подписаться на изменения данных пользователя
+ * Subscribe to user data changes
  */
 export const subscribeToDataChanges = (
   callback: (data: { keywords: KeywordMapping[]; order: string[]; settings?: any } | null) => void
@@ -259,13 +259,13 @@ export const subscribeToDataChanges = (
   const setupSubscription = async () => {
     if (isUnsubscribed) return;
 
-    // Отписываемся от предыдущей подписки, если она есть
+    // Unsubscribe from previous subscription if exists
     if (unsubscribe) {
       unsubscribe();
       unsubscribe = null;
     }
 
-    // Удаляем предыдущие слушатели localStorage
+    // Remove previous localStorage listeners
     if (typeof window !== "undefined") {
       if (storageListener) {
         window.removeEventListener("storage", storageListener);
@@ -282,12 +282,12 @@ export const subscribeToDataChanges = (
     if (isUnsubscribed) return;
 
     if (user) {
-      // Авторизованный пользователь - подписываемся на изменения в Firebase
+      // Authenticated user - subscribe to Firebase changes
       unsubscribe = subscribeToUserChanges(user, (cloudData) => {
         if (isUnsubscribed) return;
 
         if (cloudData) {
-          // Обновляем localStorage при изменении данных в Firebase
+          // Update localStorage when data changes in Firebase
           const storageData: StorageData = {
             keywords: cloudData.keywords,
             settings: cloudData.settings || {
@@ -298,24 +298,24 @@ export const subscribeToDataChanges = (
           if (cloudData.order) {
             saveLocalOrder(cloudData.order);
           }
-          // Отправляем событие для обновления UI
+          // Dispatch event to update UI
           if (typeof window !== "undefined") {
             window.dispatchEvent(new CustomEvent("localStorage-update"));
           }
         }
-        // Вызываем callback для обновления UI
+        // Call callback to update UI
         callback(cloudData);
       });
     } else {
-      // Неавторизованный пользователь - возвращаем данные из localStorage
+      // Unauthenticated user - return data from localStorage
       updateLocalData();
       
-      // Подписываемся на изменения localStorage (для обновления в других вкладках и текущей)
+      // Subscribe to localStorage changes (for updates in other tabs and current)
       if (typeof window !== "undefined") {
         storageListener = (e: Event) => {
           if (isUnsubscribed) return;
           const storageEvent = e as StorageEvent;
-          // Событие из других вкладок
+          // Event from other tabs
           if (storageEvent.key === "goWebsiteLauncherData" || storageEvent.key === "goWebsiteLauncherOrder") {
             updateLocalData();
           }
@@ -323,7 +323,7 @@ export const subscribeToDataChanges = (
         
         customEventListener = () => {
           if (isUnsubscribed) return;
-          // Кастомное событие из текущей вкладки
+          // Custom event from current tab
           updateLocalData();
         };
         
@@ -333,12 +333,12 @@ export const subscribeToDataChanges = (
     }
   };
 
-  // Инициализируем подписку
+  // Initialize subscription
   setupSubscription();
 
-  // Подписываемся на изменения статуса авторизации
+  // Subscribe to auth status changes
   authUnsubscribe = onAuthChange(() => {
-    // При изменении статуса авторизации переподписываемся
+    // When auth status changes, resubscribe
     setupSubscription();
   });
 

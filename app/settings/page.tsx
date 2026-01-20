@@ -26,12 +26,12 @@ export default function SettingsPage() {
     useEffect(() => {
         loadKeywords();
         
-        // Проверяем авторизацию
+        // Check current auth status
         getCurrentUser().then((user) => {
             setIsAuthenticated(!!user);
         });
         
-        // Подписываемся на изменения в Firebase
+        // Subscribe to data changes (Firebase or local storage)
         const unsubscribe = subscribeToDataChanges((data) => {
             if (data) {
                 setKeywords(data.keywords || []);
@@ -60,7 +60,7 @@ export default function SettingsPage() {
         for (const key of preferred) {
             if (urlObj.searchParams.has(key)) return key;
         }
-        // fallback: первый параметр с непустым значением
+        // Fallback: first param with a non-empty value
         for (const [k, v] of urlObj.searchParams.entries()) {
             if (v) return k;
         }
@@ -80,19 +80,19 @@ export default function SettingsPage() {
         const rawUrl = url.trim();
         
         if (!rawUrl) {
-            setError("Введите URL для парсинга");
+            setError("Enter a URL to parse");
             return;
         }
 
         if (!isValidUrl(rawUrl)) {
-            setError("Некорректный формат URL");
+            setError("Invalid URL format");
             return;
         }
 
         const normalized = normalizeUrl(rawUrl);
         try {
             const urlObj = new URL(normalized);
-            // Определяем параметры
+            // Detect base URL, path and search param
             const origin = urlObj.origin;
             const path = urlObj.pathname && urlObj.pathname !== "/" ? urlObj.pathname : "";
             const param = guessSearchParamFromUrl(urlObj) || "";
@@ -100,11 +100,11 @@ export default function SettingsPage() {
             const suggestedKeyword = hostname.replace(/^www\./, "").split(".")[0].toLowerCase();
             const suggestedDescription = labelFromDomain(hostname);
 
-            // Проверяем, есть ли сайт с таким keyword в базе Firebase
+            // Check if there is a predefined site with this keyword in Firebase
             try {
                 const existingSite = await getSiteByKeyword(suggestedKeyword);
                 if (existingSite) {
-                    // Используем данные из базы
+                    // Use data from the database
                     setKeyword(existingSite.keyword);
                     setUrl(existingSite.url);
                     setDescription(existingSite.description || suggestedDescription);
@@ -115,11 +115,11 @@ export default function SettingsPage() {
                     return;
                 }
             } catch (firebaseError) {
-                // Если Firebase не инициализирован или произошла ошибка, продолжаем с парсингом
+                // If Firebase is not initialized or fails, just continue with parsed data
                 console.warn("Firebase error:", firebaseError);
             }
-
-            // Если сайта нет в базе, используем данные из парсинга
+            
+            // If there is no site in the database, use parsed data
             setSearchPath(path);
             setSearchParam(param);
             setKeyword(suggestedKeyword);
@@ -128,7 +128,7 @@ export default function SettingsPage() {
             setShowAdvancedFields(true);
             setError("");
         } catch {
-            setError("Ошибка при парсинге URL");
+            setError("Error while parsing URL");
         }
     };
 
@@ -137,17 +137,17 @@ export default function SettingsPage() {
         setError("");
 
         if (!keyword.trim()) {
-            setError("Введите ключевое слово");
+            setError("Enter a keyword");
             return;
         }
 
         if (!url.trim()) {
-            setError("Введите URL");
+            setError("Enter a URL");
             return;
         }
 
         if (!isValidUrl(url)) {
-            setError("Некорректный URL");
+            setError("Invalid URL");
             return;
         }
 
@@ -157,7 +157,7 @@ export default function SettingsPage() {
             const parsed = new URL(normalizedUrl);
             originOnly = parsed.origin;
         } catch {
-            // fallback
+            // Fallback to the original normalized URL
         }
 
         const mapping: KeywordMapping = {
@@ -172,11 +172,11 @@ export default function SettingsPage() {
         try {
             await addKeyword(mapping);
             
-            // Проверяем, что данные действительно добавились
-            // Для авторизованных проверяем Firebase, для неавторизованных - localStorage
+            // Verify that data was actually added
+            // For authenticated users we check Firebase, for guests we rely on localStorage
             const user = await getCurrentUser();
             if (user) {
-                // Для авторизованных: ждем, пока данные появятся в Firebase
+                // For authenticated users: wait until data appears in Firebase
                 let attempts = 0;
                 const maxAttempts = 15;
                 let dataAdded = false;
@@ -195,12 +195,12 @@ export default function SettingsPage() {
                 }
                 
                 if (!dataAdded) {
-                    throw new Error("Данные не были добавлены на сервер");
+                    throw new Error("Data was not saved on the server");
                 }
             }
-            // Для неавторизованных: данные уже в localStorage, проверка не требуется
+            // For guests: data is already in localStorage, no extra check required
             
-            // Очистка формы
+            // Reset form
             setKeyword("");
             setUrl("");
             setDescription("");
@@ -209,7 +209,7 @@ export default function SettingsPage() {
             setShowAdvancedFields(false);
             setError("");
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Ошибка при добавлении сайта");
+            setError(err instanceof Error ? err.message : "Error while adding website");
             console.error("Error adding keyword:", err);
         } finally {
             setIsAdding(false);
@@ -217,12 +217,12 @@ export default function SettingsPage() {
     };
 
     const handleDelete = async (keywordToDelete: string) => {
-        if (confirm(`Удалить ключевое слово "${keywordToDelete}"?`)) {
+        if (confirm(`Delete keyword "${keywordToDelete}"?`)) {
             try {
                 await removeKeyword(keywordToDelete);
-                // Данные обновятся автоматически через подписку
+                // Data will be refreshed automatically by subscription
             } catch (err) {
-                setError("Ошибка при удалении сайта");
+                setError("Error while deleting website");
                 console.error("Error removing keyword:", err);
             }
         }
@@ -231,11 +231,11 @@ export default function SettingsPage() {
     const handleLogout = async () => {
         try {
             await logout();
-            // Сбрасываем localStorage к начальным настройкам
+            // Reset localStorage to default settings
             resetLocalStorage();
             router.push("/");
         } catch (err) {
-            setError("Ошибка при выходе из аккаунта");
+            setError("Error while logging out");
             console.error("Error logging out:", err);
         }
     };
@@ -244,14 +244,14 @@ export default function SettingsPage() {
         <div className="min-h-screen px-5 py-20 max-w-[800px] mx-auto">
             <header className="flex items-center gap-4 mb-8">
                 <Link href="/" className="text-[var(--google-blue)] no-underline text-sm transition-opacity hover:opacity-80">
-                    ← Назад
+                    ← Back
                 </Link>
-                <h1 className="text-[32px] font-normal m-0 text-[var(--text)]">Настройки</h1>
+                <h1 className="text-[32px] font-normal m-0 text-[var(--text)]">Settings</h1>
             </header>
 
             <div className="flex flex-col gap-8">
                 <section className="bg-[var(--bg)] border border-[var(--border)] rounded-lg p-6">
-                    <h2 className="text-xl font-normal m-0 mb-5 text-[var(--text)]">Добавить сайт</h2>
+                    <h2 className="text-xl font-normal m-0 mb-5 text-[var(--text)]">Add website</h2>
                     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
                         <div className="flex flex-col gap-2">
                             <label htmlFor="url" className="text-sm font-medium text-[var(--text)]">URL:</label>
@@ -262,7 +262,7 @@ export default function SettingsPage() {
                                     value={url}
                                     onChange={(e) => {
                                         setUrl(e.target.value);
-                                        // Скрываем поля при изменении URL
+                                        // Hide advanced fields when URL changes
                                         if (showAdvancedFields) {
                                             setShowAdvancedFields(false);
                                         }
@@ -275,19 +275,19 @@ export default function SettingsPage() {
                                     type="button"
                                     onClick={handleParse}
                                     className="px-5 py-3 bg-[var(--google-blue)] text-white border-none rounded text-sm font-medium cursor-pointer transition-colors hover:bg-[#3367d6] whitespace-nowrap"
-                                    title="Парсить URL и автоматически заполнить поля"
+                                    title="Parse URL and fill the fields automatically"
                                 >
                                     Parse
                                 </button>
                             </div>
                             <small className="text-xs text-[var(--text-secondary)] mt-1">
-                                💡 Совет: нажмите Parse для автоматического заполнения полей из URL
+                                💡 Tip: click Parse to auto-fill fields from the URL
                             </small>
                         </div>
                         {showAdvancedFields && (
                             <>
                                 <div className="flex flex-col gap-2">
-                                    <label htmlFor="keyword" className="text-sm font-medium text-[var(--text)]">Ключевое слово:</label>
+                                    <label htmlFor="keyword" className="text-sm font-medium text-[var(--text)]">Keyword:</label>
                                     <input
                                         id="keyword"
                                         type="text"
@@ -298,11 +298,11 @@ export default function SettingsPage() {
                                         className="px-4 py-3 border border-[var(--border)] rounded text-sm bg-[var(--bg)] text-[var(--text)] font-inherit transition-colors focus:outline-none focus:border-[var(--google-blue)]"
                                     />
                                     <small className="text-xs text-[var(--text-secondary)] mt-1">
-                                        Слово для ввода в адресной строке (например, youtube)
+                                        Word you type in the search bar (for example, youtube)
                                     </small>
                                 </div>
                                 <div className="flex flex-col gap-2">
-                                    <label htmlFor="description" className="text-sm font-medium text-[var(--text)]">Описание (необязательно):</label>
+                                    <label htmlFor="description" className="text-sm font-medium text-[var(--text)]">Description (optional):</label>
                                     <input
                                         id="description"
                                         type="text"
@@ -312,7 +312,7 @@ export default function SettingsPage() {
                                         className="px-4 py-3 border border-[var(--border)] rounded text-sm bg-[var(--bg)] text-[var(--text)] font-inherit transition-colors focus:outline-none focus:border-[var(--google-blue)]"
                                     />
                                     <small className="text-xs text-[var(--text-secondary)] mt-1">
-                                        Название сайта для отображения в попапе
+                                        Website name shown in the UI
                                     </small>
                                 </div>
                             </>
@@ -320,21 +320,21 @@ export default function SettingsPage() {
                         {showAdvancedFields && (
                             <>
                                 <div className="flex flex-col gap-2">
-                                    <label htmlFor="search-path" className="text-sm font-medium text-[var(--text)]">Путь для поиска (необязательно):</label>
+                                    <label htmlFor="search-path" className="text-sm font-medium text-[var(--text)]">Search path (optional):</label>
                                     <input
                                         id="search-path"
                                         type="text"
                                         value={searchPath}
                                         onChange={(e) => setSearchPath(e.target.value)}
-                                        placeholder="/search или /results"
+                                        placeholder="/search or /results"
                                         className="px-4 py-3 border border-[var(--border)] rounded text-sm bg-[var(--bg)] text-[var(--text)] font-inherit transition-colors focus:outline-none focus:border-[var(--google-blue)]"
                                     />
                                     <small className="text-xs text-[var(--text-secondary)] mt-1">
-                                        Путь на сайте для поиска (например, /search, /results)
+                                        Path on the website used for search (for example, /search, /results)
                                     </small>
                                 </div>
                                 <div className="flex flex-col gap-2">
-                                    <label htmlFor="search-param" className="text-sm font-medium text-[var(--text)]">Параметр поиска (например, q, search_query, k):</label>
+                                    <label htmlFor="search-param" className="text-sm font-medium text-[var(--text)]">Search parameter (for example, q, search_query, k):</label>
                                     <input
                                         id="search-param"
                                         type="text"
@@ -344,7 +344,7 @@ export default function SettingsPage() {
                                         className="px-4 py-3 border border-[var(--border)] rounded text-sm bg-[var(--bg)] text-[var(--text)] font-inherit transition-colors focus:outline-none focus:border-[var(--google-blue)]"
                                     />
                                     <small className="text-xs text-[var(--text-secondary)] mt-1">
-                                        Параметр запроса для поиска (например, q для Google, search_query для YouTube)
+                                        Query parameter used for search (for example, q for Google, search_query for YouTube)
                                     </small>
                                 </div>
                             </>
@@ -356,15 +356,15 @@ export default function SettingsPage() {
                             disabled={isAdding}
                         >
                             {isAdding && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>}
-                            {isAdding ? "Сохранение..." : "Добавить"}
+                            {isAdding ? "Saving..." : "Add website"}
                         </button>
                     </form>
                 </section>
 
                 <section className="bg-[var(--bg)] border border-[var(--border)] rounded-lg p-6">
-                    <h2 className="text-xl font-normal m-0 mb-5 text-[var(--text)]">Сохраненные сайты</h2>
+                    <h2 className="text-xl font-normal m-0 mb-5 text-[var(--text)]">Saved websites</h2>
                     {keywords.length === 0 ? (
-                        <p className="text-center text-[var(--text-secondary)] py-10 px-5 text-base">Нет сохраненных сайтов</p>
+                        <p className="text-center text-[var(--text-secondary)] py-10 px-5 text-base">No saved websites yet</p>
                     ) : (
                         <div className="flex flex-col gap-3">
                             {keywords.map((item) => (
@@ -395,7 +395,7 @@ export default function SettingsPage() {
                                     <button
                                         className="bg-transparent border-none text-xl cursor-pointer p-2 rounded transition-colors hover:bg-[var(--border)] flex-shrink-0"
                                         onClick={() => handleDelete(item.keyword)}
-                                        title="Удалить"
+                                        title="Delete"
                                     >
                                         🗑️
                                     </button>
@@ -407,12 +407,12 @@ export default function SettingsPage() {
 
                 {isAuthenticated && (
                     <section className="bg-[var(--bg)] border border-[var(--border)] rounded-lg p-6">
-                        <h2 className="text-xl font-normal m-0 mb-5 text-[var(--text)]">Аккаунт</h2>
+                        <h2 className="text-xl font-normal m-0 mb-5 text-[var(--text)]">Account</h2>
                         <button
                             onClick={handleLogout}
                             className="px-6 py-3 bg-transparent text-[var(--text)] border border-[var(--border)] rounded text-sm font-medium cursor-pointer transition-all hover:bg-[var(--hover)] hover:border-[var(--google-red)] text-[var(--google-red)]"
                         >
-                            Выйти из аккаунта
+                            Log out
                         </button>
                     </section>
                 )}

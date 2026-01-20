@@ -53,6 +53,5 @@ The application parses your input to separate the keyword from the search query.
 
 - Use short and memorable keywords for your favorite sites
 - Add descriptions to sites to make them easier to find
-- Take advantage of autocomplete suggestions for faster navigation
 - Click site icons on the home page for instant access
 - Keep your most-used sites at the top for quick access

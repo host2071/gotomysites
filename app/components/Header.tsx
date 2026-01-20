@@ -11,7 +11,7 @@ export default function Header() {
     const [isLoading, setIsLoading] = useState(true);
     
     useEffect(() => {
-        // Подписываемся на изменения авторизации для мгновенного обновления
+        // Subscribe to auth changes so header updates immediately
         const unsubscribe = onAuthChange((user) => {
             setIsAuthenticated(!!user);
             setIsLoading(false);
@@ -25,23 +25,23 @@ export default function Header() {
             {!isLoading && (
                 <>
                     {isAuthenticated ? (
-                        <Link href="/settings" className="flex items-center justify-center w-10 h-10 rounded-full bg-transparent border-none cursor-pointer text-[var(--text)] no-underline transition-colors hover:bg-[var(--hover)]" title="Настройки">
+                        <Link href="/settings" className="flex items-center justify-center w-10 h-10 rounded-full bg-transparent border-none cursor-pointer text-[var(--text)] no-underline transition-colors hover:bg-[var(--hover)]" title="Settings">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
                             </svg>
                         </Link>
                     ) : (
-                        <Link href="/auth" className="flex items-center gap-2 px-4 py-2 bg-[var(--google-blue)] text-white no-underline rounded-full text-sm font-medium transition-colors hover:bg-[#3367d6]" title="Войти">
+                        <Link href="/auth" className="flex items-center gap-2 px-4 py-2 bg-[var(--google-blue)] text-white no-underline rounded-full text-sm font-medium transition-colors hover:bg-[#3367d6]" title="Sign in">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
                                 <circle cx="12" cy="7" r="4"/>
                             </svg>
-                            <span>Войти</span>
+                            <span>Sign in</span>
                         </Link>
                     )}
                 </>
             )}
-            <Link href="/help" className="flex items-center justify-center w-10 h-10 rounded-full bg-transparent border-none cursor-pointer text-[var(--text)] no-underline transition-colors hover:bg-[var(--hover)]" title="Справка">
+            <Link href="/help" className="flex items-center justify-center w-10 h-10 rounded-full bg-transparent border-none cursor-pointer text-[var(--text)] no-underline transition-colors hover:bg-[var(--hover)]" title="Help">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="10"/>
                     <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
@@ -61,7 +61,7 @@ export default function Header() {
                         <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
                         <line x1="12" y1="22.08" x2="12" y2="12"/>
                     </svg>
-                    <span>Установить расширение</span>
+                    <span>Install extension</span>
                 </a>
             )}
         </header>

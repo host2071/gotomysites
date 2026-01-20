@@ -28,7 +28,7 @@ export const initializeSync = () => {
     }
 
     if (user) {
-      // Загружаем данные из Firebase и сохраняем в localStorage при первом входе
+      // Load data from Firebase and save to localStorage on first login
       try {
         const cloudData = await syncFromCloud(user);
         if (cloudData) {
@@ -47,10 +47,10 @@ export const initializeSync = () => {
         console.error("Error syncing from cloud on auth:", error);
       }
 
-      // Подписываемся на изменения в Firebase
+      // Subscribe to Firebase changes
       unsubscribeSync = subscribeToUserChanges(user, (cloudData) => {
         if (cloudData) {
-          // Обновляем localStorage при изменении данных в Firebase
+          // Update localStorage when data changes in Firebase
           const storageData: StorageData = {
             keywords: cloudData.keywords,
             settings: cloudData.settings || {
@@ -61,12 +61,12 @@ export const initializeSync = () => {
           if (cloudData.order) {
             saveLocalOrder(cloudData.order);
           }
-          // Отправляем событие для обновления UI
+          // Dispatch event to update UI
           if (typeof window !== "undefined") {
             window.dispatchEvent(new CustomEvent("localStorage-update"));
           }
         }
-        // Вызываем событие синхронизации для обновления UI
+        // Dispatch sync event to update UI
         window.dispatchEvent(
           new CustomEvent("storage-sync", { detail: cloudData })
         );

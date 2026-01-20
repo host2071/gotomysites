@@ -16,7 +16,7 @@ const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || "Go My Sites";
 
 export const metadata: Metadata = {
   title: APP_NAME,
-  description: "Быстрый доступ к вашим любимым сайтам",
+  description: "Fast keyword-based access to your favorite websites",
 };
 
 export default function RootLayout({

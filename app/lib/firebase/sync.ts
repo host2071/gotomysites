@@ -19,8 +19,8 @@ import { getOrCreateSite, removeSiteUsage, getSiteByKeyword } from "./sites";
 const USERS_COLLECTION = "users";
 
 /**
- * Удаляет поля со значением undefined из объекта
- * Firebase не поддерживает undefined значения
+ * Removes fields with undefined values from object
+ * Firebase does not support undefined values
  */
 const removeUndefinedFields = <T extends Record<string, any>>(obj: T): Partial<T> => {
   const result: Partial<T> = {};
@@ -54,7 +54,7 @@ export interface UserData {
 }
 
 /**
- * Синхронизировать данные пользователя в облако
+ * Sync user data to cloud
  */
 export const syncToCloud = async (
   user: User,
@@ -66,21 +66,21 @@ export const syncToCloud = async (
 
   const userRef = doc(db, USERS_COLLECTION, user.uid);
 
-  // Убираем дубликаты по ключевому слову (case-insensitive)
+  // Remove duplicates by keyword (case-insensitive)
   const uniqueKeywords = keywords.filter((keyword, index, self) =>
     index === self.findIndex((k) => k.keyword.toLowerCase() === keyword.keyword.toLowerCase())
   );
 
-  // Преобразуем keywords в UserSite с siteId
+  // Convert keywords to UserSite with siteId
   const userSites: UserSite[] = await Promise.all(
     uniqueKeywords.map(async (keyword) => {
-      // Получаем или создаем сайт в коллекции sites
+      // Get or create site in sites collection
       const siteId = await getOrCreateSite(keyword);
       
-      // Проверяем, есть ли сайт в базе, чтобы использовать данные оттуда
+      // Check if site exists in database to use data from there
       const existingSite = await getSiteByKeyword(keyword.keyword.toLowerCase());
       
-      // Если сайт существует в базе, используем данные из базы, иначе используем переданные данные
+      // If site exists in database, use data from database, otherwise use provided data
       const siteData = existingSite || keyword;
 
       const userSite = {
@@ -93,13 +93,13 @@ export const syncToCloud = async (
         addedAt: Timestamp.now(),
       };
 
-      // Удаляем undefined поля перед возвратом
+      // Remove undefined fields before returning
       return removeUndefinedFields(userSite) as UserSite;
     })
   );
 
-  // Всегда создаем/обновляем документ пользователя
-  // merge: true гарантирует, что документ будет создан, если его нет
+  // Always create/update user document
+  // merge: true ensures document will be created if it doesn't exist
   await setDoc(
     userRef,
     {
@@ -115,7 +115,7 @@ export const syncToCloud = async (
 };
 
 /**
- * Загрузить данные пользователя из облака
+ * Load user data from cloud
  */
 export const syncFromCloud = async (
   user: User
@@ -128,7 +128,7 @@ export const syncFromCloud = async (
   if (docSnap.exists()) {
     const data = docSnap.data() as UserData;
     
-    // Преобразуем UserSite обратно в KeywordMapping
+    // Convert UserSite back to KeywordMapping
     const keywords: KeywordMapping[] = data.sites.map((userSite) => ({
       keyword: userSite.keyword,
       url: userSite.url,
@@ -148,7 +148,7 @@ export const syncFromCloud = async (
 };
 
 /**
- * Добавить сайт пользователю
+ * Add site to user
  */
 export const addSiteToUser = async (
   user: User,
@@ -159,20 +159,20 @@ export const addSiteToUser = async (
   const userRef = doc(db, USERS_COLLECTION, user.uid);
   const userDoc = await getDoc(userRef);
   
-  // Получаем или создаем сайт в коллекции sites
+  // Get or create site in sites collection
   const siteId = await getOrCreateSite(keyword);
   
-  // Проверяем, есть ли сайт в базе
+  // Check if site exists in database
   const existingSiteInDb = await getSiteByKeyword(keyword.keyword.toLowerCase());
 
-  // Проверяем, существует ли уже сайт у пользователя с таким ключевым словом
+  // Check if user already has a site with this keyword
   if (userDoc.exists()) {
     const data = userDoc.data() as UserData;
     const existingUserSite = data.sites.find(
       (s) => s.keyword.toLowerCase() === keyword.keyword.toLowerCase()
     );
     
-    // Если сайт уже существует у пользователя, обновляем его данные (если новые поля заполнены)
+    // If site already exists for user, update its data (if new fields are filled)
     if (existingUserSite) {
       const updatedUserSite: Partial<UserSite> = {
         siteId: existingUserSite.siteId,
@@ -183,7 +183,7 @@ export const addSiteToUser = async (
         searchParam: existingUserSite.searchParam,
       };
       
-      // Обновляем только заполненные поля из переданных данных
+      // Update only filled fields from provided data
       if (keyword.url) {
         updatedUserSite.url = keyword.url;
       }
@@ -197,7 +197,7 @@ export const addSiteToUser = async (
         updatedUserSite.searchParam = keyword.searchParam;
       }
       
-      // Удаляем старый сайт и добавляем обновленный
+      // Remove old site and add updated one
       await updateDoc(userRef, {
         sites: arrayRemove(existingUserSite),
         syncedAt: serverTimestamp(),
@@ -205,7 +205,7 @@ export const addSiteToUser = async (
       
       const newUserSite = removeUndefinedFields({
         ...updatedUserSite,
-        addedAt: existingUserSite.addedAt, // Сохраняем оригинальную дату добавления
+        addedAt: existingUserSite.addedAt, // Preserve original add date
       }) as UserSite;
       
       await updateDoc(userRef, {
@@ -217,7 +217,7 @@ export const addSiteToUser = async (
     }
   }
 
-  // Если сайт существует в базе, используем данные из базы, иначе используем переданные данные
+  // If site exists in database, use data from database, otherwise use provided data
   const siteData = existingSiteInDb || keyword;
 
   const userSiteRaw = {
@@ -230,10 +230,10 @@ export const addSiteToUser = async (
     addedAt: Timestamp.now(),
   };
 
-  // Удаляем undefined поля перед сохранением в Firebase
+  // Remove undefined fields before saving to Firebase
   const userSite = removeUndefinedFields(userSiteRaw) as UserSite;
 
-  // Если документ не существует, создаем его
+  // If document doesn't exist, create it
   if (!userDoc.exists()) {
     await setDoc(userRef, {
       userId: user.uid,
@@ -244,7 +244,7 @@ export const addSiteToUser = async (
       syncedAt: serverTimestamp(),
     });
   } else {
-    // Если документ существует, обновляем его
+    // If document exists, update it
     await updateDoc(userRef, {
       sites: arrayUnion(userSite),
       syncedAt: serverTimestamp(),
@@ -253,7 +253,7 @@ export const addSiteToUser = async (
 };
 
 /**
- * Удалить сайт у пользователя
+ * Remove site from user
  */
 export const removeSiteFromUser = async (
   user: User,
@@ -271,20 +271,20 @@ export const removeSiteFromUser = async (
     );
 
     if (siteToRemove) {
-      // Удаляем из массива пользователя
+      // Remove from user array
       await updateDoc(userRef, {
         sites: arrayRemove(siteToRemove),
         syncedAt: serverTimestamp(),
       });
 
-      // Уменьшаем счетчик использования сайта
+      // Decrease site usage counter
       await removeSiteUsage(siteToRemove.siteId);
     }
   }
 };
 
 /**
- * Обновить порядок сайтов пользователя
+ * Update user site order
  */
 export const updateUserOrder = async (
   user: User,
@@ -295,7 +295,7 @@ export const updateUserOrder = async (
   const userRef = doc(db, USERS_COLLECTION, user.uid);
   const userDoc = await getDoc(userRef);
 
-  // Если документ не существует, создаем его
+  // If document doesn't exist, create it
   if (!userDoc.exists()) {
     await setDoc(userRef, {
       userId: user.uid,
@@ -306,7 +306,7 @@ export const updateUserOrder = async (
       syncedAt: serverTimestamp(),
     });
   } else {
-    // Если документ существует, обновляем его
+    // If document exists, update it
     await updateDoc(userRef, {
       order,
       syncedAt: serverTimestamp(),
@@ -315,7 +315,7 @@ export const updateUserOrder = async (
 };
 
 /**
- * Подписаться на изменения данных пользователя
+ * Subscribe to user data changes
  */
 export const subscribeToUserChanges = (
   user: User,
@@ -351,13 +351,13 @@ export const subscribeToUserChanges = (
       }
     },
     (error) => {
-      // Обрабатываем ошибки доступа (например, после выхода из аккаунта)
+      // Handle access errors (e.g., after logout)
       if (error.code === 'permission-denied') {
-        // Пользователь больше не авторизован - возвращаем null и не показываем ошибку
+        // User is no longer authenticated - return null and don't show error
         callback(null);
         return;
       }
-      // Для других ошибок логируем, но не прерываем работу
+      // For other errors, log but don't interrupt work
       console.error("Error in snapshot listener:", error);
     }
   );

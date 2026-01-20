@@ -1,7 +1,7 @@
 import type { KeywordMapping, ParsedQuery, StorageData } from "../types";
 import { findKeyword, findKeywordSync, loadData } from "./storage/index";
 
-// Константы
+// Constants
 const DEFAULT_SEARCH_ENGINE = "https://google.com/search?q=";
 const GOOGLE_FAVICON_API = "https://www.google.com/s2/favicons";
 const HTTPS_PROTOCOL = "https://";
@@ -9,11 +9,11 @@ const HTTP_PROTOCOL = "http://";
 const MIN_KEYWORD_LENGTH_FOR_FUZZY = 3;
 
 /**
- * Парсинг запроса
- * Разделяет введенный текст на ключевое слово и параметры запроса
+ * Parse query
+ * Splits input text into keyword and query parameters
  * 
- * @param text - текст запроса (например, "youtube react tutorial")
- * @returns объект с ключевым словом и параметрами запроса
+ * @param text - query text (e.g., "youtube react tutorial")
+ * @returns object with keyword and query parameters
  */
 export function parseQuery(text: string): ParsedQuery {
     const trimmed = text.trim();
@@ -34,33 +34,33 @@ export function parseQuery(text: string): ParsedQuery {
 }
 
 /**
- * Нормализация URL (добавляет протокол если отсутствует)
+ * Normalize URL (adds protocol if missing)
  * 
- * @param url - URL для нормализации
- * @returns нормализованный URL
+ * @param url - URL to normalize
+ * @returns normalized URL
  */
 export function normalizeUrl(url: string): string {
     if (!url) return "";
     
-    // Если уже полный URL, вернуть как есть
+    // If already a full URL, return as is
     if (url.startsWith(HTTPS_PROTOCOL) || url.startsWith(HTTP_PROTOCOL)) {
         return url;
     }
     
-    // Если начинается с //, добавить https:
+    // If starts with //, add https:
     if (url.startsWith("//")) {
         return `https:${url}`;
     }
     
-    // Иначе добавить https://
+    // Otherwise add https://
     return `${HTTPS_PROTOCOL}${url}`;
 }
 
 /**
- * Валидация URL
+ * Validate URL
  * 
- * @param url - URL для валидации
- * @returns true если URL валиден, false иначе
+ * @param url - URL to validate
+ * @returns true if URL is valid, false otherwise
  */
 export function isValidUrl(url: string): boolean {
     if (!url) return false;
@@ -75,11 +75,11 @@ export function isValidUrl(url: string): boolean {
 }
 
 /**
- * Объединение базового URL с путем
+ * Combine base URL with path
  * 
- * @param base - базовый URL
- * @param path - путь для добавления
- * @returns объединенный URL
+ * @param base - base URL
+ * @param path - path to add
+ * @returns combined URL
  */
 function buildPath(base: string, path: string): string {
     const trimmedBase = base.replace(/\/$/, "");
@@ -88,11 +88,11 @@ function buildPath(base: string, path: string): string {
 }
 
 /**
- * Разрешение целевого URL для поиска
+ * Resolve target URL for search
  * 
- * @param target - базовый URL или описание сайта из настроек
- * @param searchParamOverride - параметр поиска (при передаче строкового URL)
- * @returns объект с базовым URL и параметром поиска
+ * @param target - base URL or site description from settings
+ * @param searchParamOverride - search parameter (when passing string URL)
+ * @returns object with base URL and search parameter
  */
 function resolveSearchTarget(
     target: string | KeywordMapping,
@@ -117,14 +117,14 @@ function resolveSearchTarget(
 }
 
 /**
- * Формирование URL с параметрами поиска.
- * Может принимать как обычную строку URL, так и объект `KeywordMapping`,
- * чтобы автоматически учитывать `searchPath` и `searchParam`.
+ * Build URL with search parameters.
+ * Can accept either a plain string URL or a `KeywordMapping` object
+ * to automatically account for `searchPath` and `searchParam`.
  * 
- * @param target - базовый URL или описание сайта из настроек
- * @param query - поисковая строка
- * @param searchParamOverride - параметр поиска (при передаче строкового URL)
- * @returns URL с параметрами поиска
+ * @param target - base URL or site description from settings
+ * @param query - search string
+ * @param searchParamOverride - search parameter (when passing string URL)
+ * @returns URL with search parameters
  */
 export function buildSearchUrl(
     target: string | KeywordMapping,
@@ -147,16 +147,16 @@ export function buildSearchUrl(
         url.searchParams.set(searchParam, query);
         return url.toString();
     } catch {
-        // Если не удалось создать URL, возвращаем базовый
+        // If failed to create URL, return base URL
         return baseUrl;
     }
 }
 
 /**
- * Получение URL для favicon через Google API
+ * Get favicon URL via Google API
  * 
- * @param url - URL сайта
- * @returns URL favicon или пустую строку при ошибке
+ * @param url - site URL
+ * @returns favicon URL or empty string on error
  */
 export function getFaviconUrl(url: string): string {
     if (!url) return "";
@@ -170,11 +170,11 @@ export function getFaviconUrl(url: string): string {
 }
 
 /**
- * Получение URL поиска по умолчанию
+ * Get default search URL
  * 
- * @param query - поисковый запрос
- * @param defaultEngine - опциональный поисковик по умолчанию
- * @returns URL для поиска
+ * @param query - search query
+ * @param defaultEngine - optional default search engine
+ * @returns search URL
  */
 function getDefaultSearchUrl(query: string, defaultEngine?: string): string {
     if (defaultEngine) {
@@ -184,23 +184,23 @@ function getDefaultSearchUrl(query: string, defaultEngine?: string): string {
 }
 
 /**
- * Поиск ключевого слова с использованием нечеткого совпадения
+ * Find keyword using fuzzy matching
  * 
- * @param keywords - список ключевых слов
- * @param keywordLower - искомое ключевое слово в нижнем регистре
- * @returns найденное ключевое слово или null
+ * @param keywords - list of keywords
+ * @param keywordLower - keyword to search for in lowercase
+ * @returns found keyword or null
  */
 function findFuzzyKeyword(
     keywords: KeywordMapping[],
     keywordLower: string
 ): KeywordMapping | null {
-    // Сначала ищем точное совпадение начала
+    // First look for exact start match
     const startsWithMatch = keywords.find(k => 
         k.keyword.toLowerCase().startsWith(keywordLower)
     );
     if (startsWithMatch) return startsWithMatch;
     
-    // Затем частичное совпадение или совпадение в описании
+    // Then partial match or match in description
     return keywords.find(k => {
         const kLower = k.keyword.toLowerCase();
         return kLower.includes(keywordLower) || 
@@ -209,11 +209,11 @@ function findFuzzyKeyword(
 }
 
 /**
- * Поиск ключевого слова в данных
+ * Find keyword in data
  * 
- * @param keyword - искомое ключевое слово
- * @param currentData - данные для поиска
- * @returns найденное ключевое слово или null
+ * @param keyword - keyword to search for
+ * @param currentData - data to search in
+ * @returns found keyword or null
  */
 async function findKeywordMapping(
     keyword: string,
@@ -221,13 +221,13 @@ async function findKeywordMapping(
 ): Promise<KeywordMapping | null> {
     const keywordLower = keyword.toLowerCase();
     
-    // Сначала пытаемся найти точное совпадение
+    // First try to find exact match
     let mapping = findKeywordSync(keyword);
     if (!mapping) {
         mapping = await findKeyword(keyword);
     }
     
-    // Если точного совпадения нет, используем нечеткий поиск (только если больше 3 букв)
+    // If no exact match, use fuzzy search (only if more than 3 characters)
     if (!mapping && keywordLower.length > MIN_KEYWORD_LENGTH_FOR_FUZZY) {
         mapping = findFuzzyKeyword(currentData.keywords, keywordLower);
     }
@@ -236,11 +236,11 @@ async function findKeywordMapping(
 }
 
 /**
- * Формирование целевого URL для найденного ключевого слова
+ * Build target URL for found keyword
  * 
- * @param mapping - найденное ключевое слово
- * @param searchQuery - поисковый запрос
- * @returns целевой URL
+ * @param mapping - found keyword
+ * @param searchQuery - search query
+ * @returns target URL
  */
 function buildTargetUrl(mapping: KeywordMapping, searchQuery: string): string {
     if (!searchQuery) {
@@ -250,12 +250,12 @@ function buildTargetUrl(mapping: KeywordMapping, searchQuery: string): string {
 }
 
 /**
- * Обработка поискового запроса и возврат URL для перенаправления
- * Универсальная функция для использования в SearchBar и SearchPage
+ * Process search query and return redirect URL
+ * Universal function for use in SearchBar and SearchPage
  * 
- * @param query - поисковый запрос (например, "youtube react tutorial")
- * @param preloadedData - опциональные предзагруженные данные (для оптимизации)
- * @returns Promise с URL для перенаправления или null, если запрос пустой
+ * @param query - search query (e.g., "youtube react tutorial")
+ * @param preloadedData - optional preloaded data (for optimization)
+ * @returns Promise with redirect URL or null if query is empty
  */
 export async function processSearchQuery(
     query: string,
@@ -269,12 +269,12 @@ export async function processSearchQuery(
 
     const { keyword, query: searchQuery } = parseQuery(trimmedQuery);
     
-    // Если нет ключевого слова, используем поиск по умолчанию
+    // If no keyword, use default search
     if (!keyword) {
         return getDefaultSearchUrl(trimmedQuery);
     }
 
-    // Загружаем данные, если не были переданы
+    // Load data if not provided
     let currentData: StorageData;
     if (preloadedData) {
         currentData = preloadedData;
@@ -287,10 +287,10 @@ export async function processSearchQuery(
         }
     }
 
-    // Ищем ключевое слово
+    // Search for keyword
     const mapping = await findKeywordMapping(keyword, currentData);
     
-    // Если сайт не найден, используем поиск по умолчанию
+    // If site not found, use default search
     if (!mapping) {
         return getDefaultSearchUrl(
             trimmedQuery,
@@ -298,6 +298,6 @@ export async function processSearchQuery(
         );
     }
     
-    // Формируем целевой URL
+    // Build target URL
     return buildTargetUrl(mapping, searchQuery);
 }

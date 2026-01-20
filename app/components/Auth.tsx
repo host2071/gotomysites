@@ -18,15 +18,15 @@ export default function Auth() {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
-        // Подписываемся на изменения авторизации
+        // Subscribe to auth changes and redirect after successful login
         const unsubscribe = onAuthChange(async (authUser) => {
             setUser(authUser);
             setLoading(false);
             
             if (authUser) {
-                // Инициализируем синхронизацию
+                // Initialize sync after login
                 initializeSync();
-                // Перенаправляем на главную страницу
+                // Redirect to the home page
                 router.replace("/");
             }
         });
@@ -45,9 +45,9 @@ export default function Auth() {
             } else {
                 await register(email, password);
             }
-            // После успешной авторизации onAuthChange автоматически обновит состояние и выполнит редирект
+            // After successful auth, onAuthChange will update state and redirect
         } catch (error: any) {
-            setError(error.message || "Ошибка авторизации");
+            setError(error.message || "Authentication error");
             setIsSubmitting(false);
         }
     };
@@ -57,9 +57,9 @@ export default function Auth() {
         setIsSubmitting(true);
         try {
             await loginWithGoogle();
-            // После успешной авторизации onAuthChange автоматически обновит состояние и выполнит редирект
+            // After successful auth, onAuthChange will update state and redirect
         } catch (error: any) {
-            setError(error.message || "Ошибка авторизации через Google");
+            setError(error.message || "Google sign-in error");
             setIsSubmitting(false);
         }
     };
@@ -67,7 +67,7 @@ export default function Auth() {
     const handleLogout = async () => {
         try {
             await logout();
-            // Сбрасываем localStorage к начальным настройкам
+            // Reset localStorage to default settings
             resetLocalStorage();
             setUser(null);
         } catch (error: any) {
@@ -78,7 +78,7 @@ export default function Auth() {
     if (loading) {
         return (
             <div className="flex justify-center items-center min-h-[200px] text-[var(--text-secondary)]">
-                <p>Загрузка...</p>
+                <p>Loading...</p>
             </div>
         );
     }
@@ -90,7 +90,7 @@ export default function Auth() {
                     <span className="text-sm text-[var(--text)]">{user.email}</span>
                 </div>
                 <button onClick={handleLogout} className="px-4 py-2 bg-[var(--hover)] text-[var(--text)] border border-[var(--border)] rounded transition-all hover:bg-[var(--border)] text-sm cursor-pointer">
-                    Выйти
+                    Log out
                 </button>
             </div>
         );
@@ -99,7 +99,7 @@ export default function Auth() {
     return (
         <div className="flex justify-center items-center min-h-screen p-5 bg-[var(--bg)]">
             <div className="w-full max-w-[400px] bg-[var(--bg)] border border-[var(--border)] rounded-lg p-8 shadow-[0_2px_8px_var(--shadow)]">
-                <h2 className="text-2xl font-normal m-0 mb-6 text-center text-[var(--text)]">{isLogin ? "Вход" : "Регистрация"}</h2>
+                <h2 className="text-2xl font-normal m-0 mb-6 text-center text-[var(--text)]">{isLogin ? "Sign in" : "Sign up"}</h2>
                 
                 {error && (
                     <div className="bg-[#fee] border border-[var(--google-red)] text-[var(--google-red)] p-3 rounded mb-4 text-sm">
@@ -136,13 +136,13 @@ export default function Auth() {
                         className="px-6 py-3 bg-[var(--google-blue)] text-white border-none rounded text-sm font-medium cursor-pointer transition-colors hover:bg-[#3367d6] disabled:opacity-60 disabled:cursor-not-allowed"
                         disabled={isSubmitting}
                     >
-                        {isSubmitting ? "Загрузка..." : (isLogin ? "Войти" : "Зарегистрироваться")}
+                        {isSubmitting ? "Loading..." : (isLogin ? "Sign in" : "Sign up")}
                     </button>
                 </form>
 
                 <div className="flex items-center my-6 text-center">
                     <div className="flex-1 border-b border-[var(--border)]"></div>
-                    <span className="px-4 text-[var(--text-secondary)] text-sm">или</span>
+                    <span className="px-4 text-[var(--text-secondary)] text-sm">or</span>
                     <div className="flex-1 border-b border-[var(--border)]"></div>
                 </div>
 
@@ -158,7 +158,7 @@ export default function Auth() {
                         <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
                         <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
                     </svg>
-                    Войти через Google
+                    Continue with Google
                 </button>
 
                 <button 
@@ -170,7 +170,7 @@ export default function Auth() {
                     className="w-full mt-4 p-2 bg-transparent border-none text-[var(--google-blue)] text-sm cursor-pointer underline transition-opacity hover:opacity-80 disabled:opacity-60 disabled:cursor-not-allowed"
                     disabled={isSubmitting}
                 >
-                    {isLogin ? "Нет аккаунта? Зарегистрироваться" : "Уже есть аккаунт? Войти"}
+                    {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
                 </button>
             </div>
         </div>

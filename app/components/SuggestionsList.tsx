@@ -24,7 +24,7 @@ export default function SuggestionsList({
     const suggestionsRef = useRef<HTMLDivElement>(null);
     const suggestionRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-    // Прокрутка к выбранной подсказке
+    // Scroll to selected suggestion
     useEffect(() => {
         if (selectedIndex >= 0 && suggestionRefs.current[selectedIndex]) {
             suggestionRefs.current[selectedIndex]?.scrollIntoView({
@@ -35,7 +35,7 @@ export default function SuggestionsList({
     }, [selectedIndex, suggestions]);
 
     const handleContainerMouseDown = (e: React.MouseEvent) => {
-        e.preventDefault(); // Предотвращаем blur при клике на контейнер подсказок
+        e.preventDefault(); // Prevent blur when clicking on suggestions container
     };
 
     if (suggestions.length === 0) return null;

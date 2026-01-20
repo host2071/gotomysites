@@ -12,7 +12,7 @@ const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || "Go My Sites";
 
 export default function Home() {
     useEffect(() => {
-        // Инициализируем синхронизацию при загрузке
+        // Initialize sync on page load for authenticated users
         getCurrentUser().then((user) => {
             if (user) {
                 initializeSync();

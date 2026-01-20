@@ -9,7 +9,7 @@ export function useKeywordsData() {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        // Сначала загружаем данные из localStorage для быстрой загрузки
+        // First load data from localStorage for fast loading
         try {
             const localData = loadLocalDataSync();
             setData(localData);
@@ -20,7 +20,7 @@ export function useKeywordsData() {
             setIsLoading(false);
         }
 
-        // Затем синхронизируем с Firebase в фоне
+        // Then sync with Firebase in background
         const loadDataAsync = async () => {
             try {
                 const loadedData = await loadData();
